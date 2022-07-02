@@ -5,6 +5,9 @@
 (add-hook 'emacs-startup-hook
           #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
+;; Data emacs reads from process
+(setq read-process-output-max (* 1024 1024)) ;; 1mb
+
 ; Quality of life
 (setq use-short-answers t)
 (setq ring-bell-function 'ignore)
@@ -53,32 +56,26 @@
       initial-scratch-message nil
       server-client-instructions nil)
 
+(load-theme 'mplex t)
 ; Line number mode
 (setq display-line-numbers-type 'relative)
 
 (global-display-line-numbers-mode)
 
-(add-hook 'display-line-numbers-mode-hook
-	  (lambda ()
-	    (let ((digits (length (int-to-string (count-lines (point-min) (point-max))))))
-	      (setq display-line-numbers-width digits))))
-
 ; Scroll
 (setq scroll-conservatively 1000)
 (setq scroll-margin 2)
 
-; Fonts
-(defvar my/font "Go Mono 9")
-
-(defun my/set-font-faces ()
-  (set-face-attribute 'default nil :font my/font)
-  (set-face-attribute 'fixed-pitch nil :font my/font))
+(defun my-set-font-faces ()
+  (let ((my-font "Ttyp0 Otb"))
+    (set-face-attribute 'default nil :font my-font)
+    (set-face-attribute 'fixed-pitch nil :font my-font)))
 
 (if (daemonp)
     (add-hook 'after-make-frame-functions
               (lambda (frame)
-                (with-selected-frame frame (my/set-font-faces))))
-  (my/set-font-faces))
+                (with-selected-frame frame (my-set-font-faces))))
+  (my-set-font-faces))
 
 ; Straight bootstrap
 (setq straight-check-for-modifications nil)
@@ -101,17 +98,24 @@
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
 
+(defun my-set-evil-keybinds ()
+  (evil-set-leader 'normal (kbd "SPC"))
+  (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
+  (evil-define-key 'normal 'global (kbd "<leader>lb") 'switch-to-buffer))
+
 ; Evil mode
 (use-package evil
   :demand t
   :bind (("<escape>" . keyboard-escape-quit))
   :init
+  (use-package undo-fu)
   (setq evil-undo-system 'undo-fu)
   (setq evil-search-module 'evil-search)
   :custom
   (evil-want-keybinding nil)
   :config
-  (evil-mode 1))
+  (evil-mode 1)
+  (my-set-evil-keybinds))
 
 (use-package evil-collection
   :demand t
@@ -119,26 +123,15 @@
   :config
   (evil-collection-init))
 
-; Undo
-(use-package undo-fu)
-
 ; Vertico
 (use-package vertico
   :init
+  (use-package savehist
+    :init
+    (savehist-mode))
+
   (vertico-mode)
   (setq vertico-scroll-margin 2))
-
-; Save hist (for vertico)
-(use-package savehist
-  :init
-  (savehist-mode))
-
-; Themes
-;;(use-package color-theme-sanityinc-tomorrow
-;; :config
-;; (load-theme 'sanityinc-tomorrow-bright t))
-
-(use-package cider)
 
 (use-package which-key
   :config
@@ -148,8 +141,6 @@
   :config
   (rainbow-mode))
 
-(use-package elixir-mode)
-
 (use-package dashboard
   :config
   (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
@@ -157,5 +148,38 @@
   (setq dashboard-center-content t)
 
   (dashboard-setup-startup-hook))
-;;(use-package spaceway-theme
-;;:straight (spaceway-theme :local-repo "~/.emacs.d/extra/spaceway-theme" :type nil))
+
+;; Languages modes
+(use-package go-mode)
+
+(use-package elixir-mode)
+
+(use-package cider)
+
+;; Auto completion an lsp stuff
+(use-package company
+  :config
+  (setq company-minimum-prefix-length 1
+        company-idle-delay 0.0 
+	company-selection-wrap-around t)
+  :init
+  (add-hook 'after-init-hook 'global-company-mode))
+
+
+(use-package lsp-mode
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  (use-package yasnippet)
+  :hook ((clojure-mode . lsp)
+         (go-mode . lsp)
+	 (c-mode . lsp)
+	 (lsp-mode . yas-global-mode)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp)
+
+(use-package lsp-ui :commands lsp-ui-mode)
+
+;; Smartparens
+(use-package smartparens
+  :init
+  (smartparens-global-mode t))
