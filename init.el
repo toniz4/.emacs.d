@@ -43,11 +43,11 @@
       (list (expand-file-name "eln-cache" user-emacs-directory)))
 
 ; Visual
+(scroll-bar-mode -1)
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (tooltip-mode -1)
 
-(scroll-bar-mode -1)
 
 (blink-cursor-mode 0)
 
@@ -101,6 +101,8 @@
 (defun my-set-evil-keybinds ()
   (evil-set-leader 'normal (kbd "SPC"))
   (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
+  (evil-define-key 'normal 'global (kbd "<leader>ss") 'sp-forward-slurp-sexp)
+  (evil-define-key 'normal 'global (kbd "<leader>sb") 'sp-forword-barf-sexp)
   (evil-define-key 'normal 'global (kbd "<leader>lb") 'switch-to-buffer))
 
 ; Evil mode
@@ -122,6 +124,9 @@
   :after evil
   :config
   (evil-collection-init))
+
+(use-package evil-commentary
+  :init (evil-commentary-mode))
 
 ; Vertico
 (use-package vertico
@@ -150,11 +155,22 @@
   (dashboard-setup-startup-hook))
 
 ;; Languages modes
+(use-package fish-mode)
+
+(use-package lua-mode)
+
 (use-package go-mode)
 
 (use-package elixir-mode)
 
-(use-package cider)
+(use-package nix-mode
+  :mode "\\.nix\\'")
+
+(use-package magit)
+
+(use-package cider
+  :init
+  (setq cider-show-error-buffer nil))
 
 ;; Auto completion an lsp stuff
 (use-package company

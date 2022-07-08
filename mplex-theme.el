@@ -29,7 +29,7 @@
    (mplex--face 'vertical-border :inherit 'default)
    (mplex--face 'fringe :inherit 'default)
    (mplex--face 'cursor :inherit 'default)
-   (mplex--face 'bold :bolt t)
+   (mplex--face 'bold :bold t)
    (mplex--face 'italic :italic t)
    (mplex--face 'bold-italic :bold-italic t)
    (mplex--face 'underline :inherit 'default)
@@ -37,7 +37,7 @@
    (mplex--face 'custom-face-tag :inherit 'default)
    (mplex--face 'custom-state :inherit 'default)
    (mplex--face 'line-number :foreground mplex-grey)
-   (mplex--face 'show-paren-match :background mplex-bg :foreground mplex-yellow)
+   (mplex--face 'show-paren-match :background mplex-bg :foreground mplex-yellow :bold t)
 
    (mplex--face 'isearch :foreground mplex-bg :background mplex-yellow)
 
