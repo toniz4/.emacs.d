@@ -27,6 +27,7 @@
       kept-old-versions 10
       kept-new-versions 10)
 
+(electric-pair-mode t)
 ; Configuration directory
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -67,9 +68,13 @@
 (setq scroll-margin 2)
 
 (defun my-set-font-faces ()
-  (let ((my-font "Ttyp0 Otb"))
-    (set-face-attribute 'default nil :font my-font)
-    (set-face-attribute 'fixed-pitch nil :font my-font)))
+  (let* ((my-font "GoMono Nerd Font Mono 9")
+	 (fallback "monospace")
+	 (font (if (x-list-fonts my-font) my-font fallback)))
+    (set-face-attribute 'default nil :font font)
+    (set-face-attribute 'fixed-pitch nil :font font)))
+
+;; (my-set-font-faces)
 
 (if (daemonp)
     (add-hook 'after-make-frame-functions
@@ -110,9 +115,22 @@
   :demand t
   :bind (("<escape>" . keyboard-escape-quit))
   :init
+  (setq evil-operator-state-tag "OPR"
+	evil-normal-state-tag "NOR"
+	evil-insert-state-tag "INS"
+	evil-visual-state-tag "VIS"
+	evil-replace-state-tag "REP"
+	evil-emacs-state-tag "EMC"
+	evil-motion-state-tag "MOT")
+
   (use-package undo-fu)
-  (setq evil-undo-system 'undo-fu)
-  (setq evil-search-module 'evil-search)
+
+  (setq evil-echo-state nil
+	evil-undo-system 'undo-fu
+	evil-want-C-u-scroll t
+	evil-want-Y-yank-to-eol t
+	evil-search-module 'evil-search)
+
   :custom
   (evil-want-keybinding nil)
   :config
@@ -124,6 +142,13 @@
   :after evil
   :config
   (evil-collection-init))
+
+(use-package evil-org
+  :after org
+  :hook (org-mode . (lambda () evil-org-mode))
+  :config
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
 
 (use-package evil-commentary
   :init (evil-commentary-mode))
@@ -172,30 +197,67 @@
   :init
   (setq cider-show-error-buffer nil))
 
+(use-package yasnippet-snippets)
+(use-package yasnippet
+  :init
+  (yas-global-mode))
+
 ;; Auto completion an lsp stuff
 (use-package company
   :config
   (setq company-minimum-prefix-length 1
         company-idle-delay 0.0 
 	company-selection-wrap-around t)
+
+  (setq company-format-margin-function #'company-text-icons-margin)
+  (setq company-tooltip-align-annotations t)
+  (setq company-tooltip-width-grow-only t)
+
+  ;; make company evil compatible
+  (mapc #'evil-declare-change-repeat
+	'(company-complete-common
+          company-select-next
+          company-select-previous
+          company-complete-selection))
+
+  (add-to-list 'company-backends '(company-capf :with company-yasnippet))
   :init
   (add-hook 'after-init-hook 'global-company-mode))
-
 
 (use-package lsp-mode
   :init
   (setq lsp-keymap-prefix "C-c l")
-  (use-package yasnippet)
-  :hook ((clojure-mode . lsp)
-         (go-mode . lsp)
-	 (c-mode . lsp)
-	 (lsp-mode . yas-global-mode)
+  (setq lsp-headerline-breadcrumb-enable nil)
+
+  :hook ((clojure-mode . lsp-deferred)
+         (go-mode . lsp-deferred)
+	 (c-mode . lsp-deferred)
+	 (lsp-mode . flycheck-mode)
+	 (lsp-mode . yas-minor-mode)
          (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp)
+  :commands lsp lsp-deferred)
 
 (use-package lsp-ui :commands lsp-ui-mode)
 
-;; Smartparens
-(use-package smartparens
+(use-package pulsar
   :init
-  (smartparens-global-mode t))
+  (pulsar-global-mode))
+
+(use-package flycheck)
+
+(use-package direnv
+  :config
+  (direnv-mode))
+
+(use-package doom-modeline
+  :init
+  (setq doom-modeline-height 0)
+  :hook (after-init . doom-modeline-mode))
+
+(use-package org
+  :config
+  (setq org-src-fontify-natively t) ;; Syntax highlighting in org src blocks
+  (setq org-highlight-latex-and-related '(native)) ;; Highlight inline LaTeX
+  (setq org-startup-folded 'show2levels) ;; Org files start up folded by default
+  (setq org-image-actual-width 300)
+  (setq org-fontify-whole-heading-line t))
