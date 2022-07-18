@@ -1,4 +1,4 @@
-#+TITLE: Cássio's Ecmas Config 
+#+TITLE: Cássio's Emacs Config 
 :PROPERTIES:
 #+AUTHOR: Cássio Ávila
 #+PROPERTY: header-args :results silent :tangle yes
@@ -8,6 +8,24 @@
 * Meta
 
 This configurations aims to be for mainly working with programming in clojure, but be flexible enought to use it with another languages like go, elixir, c, etc..
+
+** Init file header
+
+#+begin_src emacs-lisp 
+  ;; -*- lexical-binding: t; -*-
+  ;;; 
+  ;;; Cassio's Emacs Configuration
+  ;;;
+
+  ;; Copyright (C) Cássio Ávila
+  ;; Author: Cássio Ávila <cassioavila@protonmail.com>
+  ;; URL: https://github.com/toniz4/.emacs.d
+  ;; This file is not part of GNU Emacs.
+  ;; This file is free software.
+
+  ;; The following code was auto-tangled from init.org. ;;
+
+#+end_src
 
 * Startup
 ** Early init
@@ -19,10 +37,10 @@ This writes to /early-init.el/, disabling and elabling before early in the Emacs
 
   ;; Garbage Collections
   (setq gc-cons-threshold most-positive-fixnum
-	gc-cons-percentage 0.6)
+        gc-cons-percentage 0.6)
 
   (add-hook 'emacs-startup-hook
-	    #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+            #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
   ;; Data emacs reads from process
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -32,8 +50,8 @@ This writes to /early-init.el/, disabling and elabling before early in the Emacs
   (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
 
   (setq package-native-compile t
-	native-comp-deferred-compilation t
-	native-comp-async-report-warnings-errors nil)
+        native-comp-deferred-compilation t
+        native-comp-async-report-warnings-errors nil)
 
   ;; MISC OPTIMIZATIONS ----
     ;;; optimizations (froom Doom's core.el). See that file for descriptions.
@@ -41,7 +59,7 @@ This writes to /early-init.el/, disabling and elabling before early in the Emacs
 
   ;; Disabling bidi (bidirectional editing stuff)
   (setq-default bidi-display-reordering 'left-to-right 
-		bidi-paragraph-direction 'left-to-right)
+                bidi-paragraph-direction 'left-to-right)
   (setq bidi-inhibit-bpa t)  ; emacs 27 only - disables bidirectional parenthesis
 
   (setq highlight-nonselected-windows nil)
