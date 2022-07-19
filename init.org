@@ -156,13 +156,38 @@ Set the font /main-font/, if not avaliable, use /monospace/ as a fallback
 #+END_SRC
 
 ** Hooks
+*** Electric pair mode
 
-Add hooks to modes
+Only enable the electrip pair mode in the programming mode
 
 #+begin_src emacs-lisp
   (add-hook 'prog-mode-hook
             (lambda ()
               (electric-pair-local-mode t)))
+#+end_src
+
+*** Org mode tangle
+
+This runs ~org-babel-tangle~ automaticaly when saving the /init.org/ file.
+
+#+begin_src emacs-lisp
+  (defun my/org-tangle-config ()
+    (when (string-equal (buffer-file-name)
+                        (expand-file-name "~/.emacs.d/init.org"))
+      (let ((org-confirm-babel-evaluate nil))
+        (org-babel-tangle))))
+
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (add-hook 'after-save-hook #'my/org-tangle-config)))
+#+end_src
+
+*** Tab width
+
+#+begin_src emacs-lisp
+  (add-hook 'go-mode-hook
+            (lambda ()
+              (setq-local tab-width 4)))
 #+end_src
 
 * Packages
@@ -297,6 +322,13 @@ Use direnv when changind directories in emacs
     (direnv-mode))
 #+end_src
 
+*** Magit
+
+#+begin_src emacs-lisp
+  (use-package magit
+    :commands (magit-status))
+#+end_src
+
 ** Misc packages
 *** Rainbow Mode
 
@@ -424,6 +456,12 @@ Completion menu
 
 #+begin_src emacs-lisp
   (use-package lsp-ui :commands lsp-ui-mode)
+#+end_src
+
+*** Flycheck
+
+#+begin_src emacs-lisp
+  (use-package flycheck)
 #+end_src
 
 ** UI

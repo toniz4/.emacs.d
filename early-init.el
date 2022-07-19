@@ -5,7 +5,7 @@
       gc-cons-percentage 0.6)
 
 (add-hook 'emacs-startup-hook
-	  #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+          #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
 ;; Data emacs reads from process
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -24,7 +24,7 @@
 
 ;; Disabling bidi (bidirectional editing stuff)
 (setq-default bidi-display-reordering 'left-to-right 
-	      bidi-paragraph-direction 'left-to-right)
+              bidi-paragraph-direction 'left-to-right)
 (setq bidi-inhibit-bpa t)  ; emacs 27 only - disables bidirectional parenthesis
 
 (setq highlight-nonselected-windows nil)

@@ -3,8 +3,9 @@
 (defun mplex--face (name &rest args)
   (list name `((t ,args))))
 
-(let ((class '((class color) (min-colors #xFFFFFF)))
+(let* ((class '((class color) (min-colors #xFFFFFF)))
       (mplex-black "#050505")
+      (mplex-lblack "#090909")
       (mplex-grey "#363636")
       (mplex-white "#F0F0F0")
       (mplex-red "#c37474")
@@ -19,8 +20,8 @@
       (mplex-lmagenta "#C49EC4")
       (mplex-cyan "#8AABAC")
       (mplex-lcyan "#8AABAC")
-      (mplex-fg "#F0F0F0")
-      (mplex-bg "#050505"))
+      (mplex-fg mplex-white)
+      (mplex-bg mplex-black))
 
   (custom-theme-set-faces
    'mplex
@@ -34,6 +35,7 @@
    (mplex--face 'bold-italic :bold-italic t)
    (mplex--face 'underline :inherit 'default)
    (mplex--face 'region :background mplex-lblue)
+   (mplex--face 'secondary-selection :background mplex-lblue)
    (mplex--face 'custom-face-tag :inherit 'default)
    (mplex--face 'custom-state :inherit 'default)
    (mplex--face 'line-number :foreground mplex-grey)
@@ -59,18 +61,18 @@
    (mplex--face 'font-lock-builtin-face :foreground mplex-lyellow)
    (mplex--face 'font-lock-comment-face :foreground mplex-grey :italic t)
    (mplex--face 'font-lock-comment-delimiter-face :inherit 'font-lock-comment-face)
-   (mplex--face 'font-lock-constant-face :inherit 'default)
-   (mplex--face 'font-lock-doc-face :inherit 'default)
-   (mplex--face 'font-lock-doc-string-face :inherit 'default)
-   (mplex--face 'font-lock-function-name-face :inherit 'default)
-   (mplex--face 'font-lock-keyword-face :inherit 'default)
-   (mplex--face 'font-lock-negation-char-face :inherit 'default)
-   (mplex--face 'font-lock-preprocessor-face :inherit 'default)
+   (mplex--face 'font-lock-constant-face :foreground mplex-fg)
+   (mplex--face 'font-lock-doc-face :inherit 'font-lock-constant-face)
+   (mplex--face 'font-lock-doc-string-face :inherit 'font-lock-constant-face)
+   (mplex--face 'font-lock-function-name-face :inherit 'font-lock-constant-face)
+   (mplex--face 'font-lock-keyword-face :inherit 'font-lock-constant-face)
+   (mplex--face 'font-lock-negation-char-face :inherit 'font-lock-constant-face)
+   (mplex--face 'font-lock-preprocessor-face :inherit 'font-lock-constant-face)
    (mplex--face 'font-lock-string-face :foreground mplex-green)
    (mplex--face 'font-lock-type-face :inherit 'default :bold t)
-   (mplex--face 'font-lock-variable-name-face :inherit 'default)
+   (mplex--face 'font-lock-variable-name-face :inherit 'font-lock-constant-face)
    ;; (mplex--face 'font-lock-warning-face :inherit 'default)
-   (mplex--face 'minibuffer-prompt :inherit 'default :bold t)
+   (mplex--face 'minibuffer-prompt :inherit 'font-lock-constant-face :bold t)
 
    ;; Evil mode
    (mplex--face 'evil-ex-lazy-highlight
@@ -104,8 +106,12 @@
    ;; Lsp ui
    (mplex--face 'lsp-face-highlight-textual :background mplex-grey)
    ;; Org mode
-   (mplex--face 'org-block :inherit 'default)
-   ))
+   (mplex--face 'org-block :inherit 'default :background mplex-lblack :extend t)
+
+   (mplex--face 'org-block-begin-line :inherit 'org-block :foreground mplex-grey)
+   (mplex--face 'org-block-end-line :inherit 'org-block-begin-line)
+
+   (mplex--face 'org-ellipsis :inherit 'font-lock-comment-face)))
 
 (when load-file-name
   (add-to-list 'custom-theme-load-path

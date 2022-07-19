@@ -1,3 +1,16 @@
+;; -*- lexical-binding: t; -*-
+;;; 
+;;; Cassio's Emacs Configuration
+;;;
+
+;; Copyright (C) Cássio Ávila
+;; Author: Cássio Ávila <cassioavila@protonmail.com>
+;; URL: https://github.com/toniz4/.emacs.d
+;; This file is not part of GNU Emacs.
+;; This file is free software.
+
+;; The following code was auto-tangled from init.org. ;;
+
 (setq use-short-answers t)
 (setq ring-bell-function 'ignore)
 
@@ -61,6 +74,20 @@
 (add-hook 'prog-mode-hook
           (lambda ()
             (electric-pair-local-mode t)))
+
+(defun my/org-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name "~/.emacs.d/init.org"))
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'after-save-hook #'my/org-tangle-config)))
+
+(add-hook 'go-mode-hook
+          (lambda ()
+            (setq-local tab-width 4)))
 
 ; Straight bootstrap
 (setq straight-check-for-modifications nil)
@@ -155,6 +182,9 @@
   :config
   (direnv-mode))
 
+(use-package magit
+  :commands (magit-status))
+
 (use-package rainbow-mode)
 
 (use-package dashboard
@@ -223,6 +253,8 @@
   :commands lsp lsp-deferred)
 
 (use-package lsp-ui :commands lsp-ui-mode)
+
+(use-package flycheck)
 
 (use-package doom-themes)
 
