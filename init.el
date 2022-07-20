@@ -199,6 +199,9 @@
    :states '(normal motion visual)
    :keymaps 'override
    :prefix "SPC"
+   ;; Applications
+   "a" '(nil :which-key "applications")
+   "ag" '(magit-status :which-key "magit")
 
    "SPC" '(execute-extended-command :which-key "M-x")
    "q" '(save-buffers-kill-emacs :which-key "quit emacs")
