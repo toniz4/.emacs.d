@@ -1,9 +1,7 @@
 #+TITLE: Cássio's Emacs Config 
-:PROPERTIES:
 #+AUTHOR: Cássio Ávila
 #+PROPERTY: header-args :results silent :tangle yes
 #+STARTUP: fold
-:END:
 
 * Meta
 
@@ -134,6 +132,13 @@ Remove ugly stuff, add pretty stuff
   (setq display-line-numbers-type 'relative)
 
   (global-display-line-numbers-mode)
+
+  ;; Don't resize the frames in steps; it looks weird, especially in tiling window
+  ;; managers, where it can leave unseemly gaps.
+  (setq frame-resize-pixelwise t)
+
+  ;; But don't resize pixelwise
+  (setq window-resize-pixelwise nil)
 #+end_src
 
 ** Fonts
@@ -182,12 +187,53 @@ This runs ~org-babel-tangle~ automaticaly when saving the /init.org/ file.
               (add-hook 'after-save-hook #'my/org-tangle-config)))
 #+end_src
 
+*** Org present with visual fill column
+
+#+begin_src emacs-lisp
+  (add-hook 'org-present-mode-hook
+            (lambda ()
+              (visual-fill-column-mode 1)
+              (setq mode-line-format nil)))
+
+  (add-hook 'org-present-mode-quit-hook
+            (lambda ()
+              (visual-fill-column-mode 0)
+              (doom-modeline-mode)))
+#+end_src
+
 *** Tab width
 
 #+begin_src emacs-lisp
   (add-hook 'go-mode-hook
             (lambda ()
               (setq-local tab-width 4)))
+#+end_src
+
+** Custom Functions
+
+#+begin_src emacs-lisp
+  ;; Switch to the scratch buffer
+  (defun my/switch-to-scratch-buffer ()
+    (interactive)
+    (switch-to-buffer "*scratch*"))
+#+end_src
+
+** Bookmarks 
+
+#+begin_src emacs-lisp
+  (setq bookmark-save-flag 1
+        bookmark-set-fringe-mark nil)
+
+  (defun my/bookmark-make-record ()
+    `((filename . ,(buffer-file-name))))
+
+  (setq bookmark-make-record-function #'my/bookmark-make-record)
+#+end_src
+
+** Save place mode
+
+#+begin_src emacs-lisp
+  (save-place-mode)
 #+end_src
 
 * Packages
@@ -226,11 +272,12 @@ Bootstraps straight.el
 Make using emacs a good experience
 
 #+begin_src emacs-lisp
-  (defun my-set-evil-keybinds ()
+  (defun my/set-evil-keybinds ()
     (evil-set-leader 'normal (kbd "SPC"))
     (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
     (evil-define-key 'normal 'global (kbd "<leader>ss") 'sp-forward-slurp-sexp)
     (evil-define-key 'normal 'global (kbd "<leader>sb") 'sp-forword-barf-sexp)
+    (evil-define-key 'motion help-mode-map "q" 'kill-this-buffer)
     (evil-define-key 'normal 'global (kbd "<leader>lb") 'switch-to-buffer))
 
   (use-package evil
@@ -256,8 +303,7 @@ Make using emacs a good experience
     :custom
     (evil-want-keybinding nil)
     :config
-    (evil-mode 1)
-    (my-set-evil-keybinds))
+    (evil-mode 1))
 
   (use-package evil-collection
     :demand t
@@ -274,6 +320,40 @@ Make using emacs a good experience
 
   (use-package evil-commentary
     :init (evil-commentary-mode))
+#+end_src
+
+*** General (Key definitions)
+
+#+begin_src emacs-lisp
+  (use-package general
+    :init
+    (general-define-key
+     :states '(normal motion visual)
+     :keymaps 'override
+     :prefix "SPC"
+
+     "SPC" '(execute-extended-command :which-key "M-x")
+     "q" '(save-buffers-kill-emacs :which-key "quit emacs")
+     ;; Buffes 
+     "b" '(nil :which-key "buffer")
+     "ba" '(bookmark-set :which-key "set bookmark")
+     "bb" '(switch-to-buffer :which-key "switch buffers")
+     "bd" '(evil-delete-buffer :which-key "delete buffer")
+     "bk" '(kill-buffer :which-key "kill other buffers")
+     "bs" '(my/switch-to-scratch-buffer :which-key "scratch buffer")
+     "bi" '(clone-indirect-buffer  :which-key "indirect buffer")
+     "br" '(revert-buffer :which-key "revert buffer")
+
+     ;; Files
+     "f" '(nil :which-key "files")
+     "fb" '(counsel-bookmark :which-key "bookmarks")
+     "ff" '(find-file :which-key "find file")
+     ;; "fn" '(new-file :which-key "new file")
+     ;; "fr" '(counsel-recentf :which-key "recent files")
+     "fR" '(rename-file :which-key "rename file")
+     "fs" '(save-buffer :which-key "save buffer")
+     "fS" '(evil-write-all :which-key "save all buffers")
+     ))
 #+end_src
 
 ** Quality of life
@@ -350,6 +430,17 @@ Cool starting screen
     (setq dashboard-center-content t)
 
     (dashboard-setup-startup-hook))
+#+end_src
+
+*** Visual Fill Column
+
+#+begin_src emacs-lisp
+  (use-package visual-fill-column
+    :commands
+    (visual-fill-column-mode)
+    :init
+    (setq visual-fill-column-center-text t
+          visual-fill-column-width 110))
 #+end_src
 
 ** Language modes
@@ -517,3 +608,9 @@ Emacs comes with a out of date version of org mode
     :hook (org-mode . org-bullets-mode))
 #+end_src
 
+*** Org Present
+
+#+begin_src emacs-lisp
+  (use-package org-present
+    :commands (org-present))
+#+end_src
