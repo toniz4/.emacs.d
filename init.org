@@ -488,6 +488,12 @@ Cool starting screen
     (setq cider-show-error-buffer nil))
 #+end_src
 
+*** Python
+
+#+begin_src emacs-lisp
+  (use-package python-mode)
+#+end_src
+
 ** Text Completion
 *** Yasnippet
 
@@ -506,44 +512,108 @@ Snippets are cool
 Completion menu
 
 #+begin_src emacs-lisp
-  (use-package company
-    :config
-    (setq company-minimum-prefix-length 1
-          company-idle-delay 0.0 
-          company-selection-wrap-around t)
+  ;; (use-package company
+  ;;   :config
+  ;;   (setq company-minimum-prefix-length 1
+  ;;         company-idle-delay 0.0 
+  ;;         company-selection-wrap-around t)
 
-    (setq company-format-margin-function #'company-text-icons-margin)
-    (setq company-tooltip-align-annotations t)
-    (setq company-tooltip-width-grow-only t)
+  ;;   (setq company-format-margin-function #'company-text-icons-margin)
+  ;;   (setq company-tooltip-align-annotations t)
+  ;;   (setq company-tooltip-width-grow-only t)
 
-    ;; make company evil compatible
-    (mapc #'evil-declare-change-repeat
-          '(company-complete-common
-            company-select-next
-            company-select-previous
-            company-complete-selection))
+  ;;   ;; make company evil compatible
+  ;;   (mapc #'evil-declare-change-repeat
+  ;;         '(company-complete-common
+  ;;           company-select-next
+  ;;           company-select-previous
+  ;;           company-complete-selection))
 
-    (add-to-list 'company-backends '(company-capf :with company-yasnippet))
+  ;;   (add-to-list 'company-backends '(company-capf :with company-yasnippet))
+  ;;   :init
+  ;;   (add-hook 'after-init-hook 'global-company-mode))
+#+end_src
+
+*** Orderless
+
+#+begin_src emacs-lisp
+  ; Optionally use the `orderless' completion style.
+  (use-package orderless
     :init
-    (add-hook 'after-init-hook 'global-company-mode))
+    ;; Configure a custom style dispatcher (see the Consult wiki)
+    ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
+    ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+    (setq completion-styles '(orderless basic)
+          completion-category-overrides '((file (styles . (partial-completion))))))
+
+  ;; (setq orderless-component-separator " +|-")
+#+end_src
+
+*** Corfu
+
+#+begin_src elisp
+  (use-package corfu
+    ;; Optional customizations
+    :custom
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    (corfu-auto-delay 0)
+    (corfu-auto-prefix 0)
+    (corfu-separator ?\s)          ;; Orderless field separator
+    (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    (corfu-quit-no-match t)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+    ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
+    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+
+    ;; Enable Corfu only for certain modes.
+    :hook ((prog-mode . corfu-mode)
+           (shell-mode . corfu-mode)
+           (eshell-mode . corfu-mode)))
+
+  (defun orderless-fast-dispatch (word index total)
+    (and (= index 0) (= total 1) (length< word 4)
+         `(orderless-regexp . ,(concat "^" (regexp-quote word)))))
+
+  (orderless-define-completion-style orderless-fast
+    (orderless-dispatch '(orderless-fast-dispatch))
+    (orderless-matching-styles '(orderless-literal orderless-regexp)))
+
+  ;; (setq completion-styles '(orderless-fast))
 #+end_src
 
 ** LSP
+*** Eglot
+#+begin_src emacs-lisp
+  (use-package eglot
+    :hook ((clojure-mode . eglot)))
+#+end_src
 *** LSP mode
 
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :init
-    (setq lsp-keymap-prefix "C-c l")
-    (setq lsp-headerline-breadcrumb-enable nil)
+  ;; (use-package lsp-mode
+  ;;   :init
+  ;;   (setq lsp-keymap-prefix "C-c l")
+  ;;   (setq lsp-headerline-breadcrumb-enable nil)
+  ;;   (setq lsp-pylsp-server-command "python-language-server")
+  ;;   ;; (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
 
-    :hook ((clojure-mode . lsp-deferred)
-           (go-mode . lsp-deferred)
-           (c-mode . lsp-deferred)
-           (lsp-mode . flycheck-mode)
-           (lsp-mode . yas-minor-mode)
-           (lsp-mode . lsp-enable-which-key-integration))
-    :commands lsp lsp-deferred)
+  ;;   :hook ((clojure-mode . lsp-deferred)
+  ;;          (go-mode . lsp-deferred)
+  ;;          (c-mode . lsp-deferred)
+  ;;          (python-mode . lsp-deferred)
+  ;;          (lsp-mode . flycheck-mode)
+  ;;          (lsp-mode . yas-minor-mode)
+  ;;          (lsp-mode . lsp-enable-which-key-integration))
+  ;;   :commands lsp lsp-deferred)
+
+  ;; (use-package lsp-pyright
+  ;;   ;; :ensure t
+  ;;   :hook (python-mode . (lambda ()
+  ;;                          (require 'lsp-pyright)
+  ;;                          (lsp-deferred))))  ; or lsp-deferred
 #+end_src
 
 *** LSP UI
@@ -587,7 +657,7 @@ Emacs comes with a out of date version of org mode
     (auto-fill-mode 0)
     (visual-line-mode 1)
 
-    (company-mode 0)
+    ;; (company-mode 0)
     ;; Org tempo
     (require 'org-tempo)
 
