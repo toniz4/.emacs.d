@@ -533,7 +533,6 @@ Cool starting screen
     (corfu-preselect-first nil)       ;; Disable candidate preselection
     ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
     ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
-    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
     (completion-styles '(orderless-fast basic))
     (completion-category-overrides '((file (styles basic partial-completion))))
     :bind
@@ -542,26 +541,28 @@ Cool starting screen
           ([tab] . corfu-next)
           ("S-TAB" . corfu-previous)
           ([backtab] . corfu-previous))
-    ;; Enable Corfu only for certain modes.
     :hook ((prog-mode . corfu-mode)
            (shell-mode . corfu-mode)
            (eshell-mode . corfu-mode)))
 #+end_src
 
 *** Cape
+
 #+begin_src emacs-lisp
   (use-package cape
     ;; Bind dedicated completion commands
-    :bind (("M-<tab>" . completion-at-point))
     :init
-    ;; I'm on a Mac
-    ;; (setq cape-dict-file "/usr/share/dict/words")
-    ;; Add `completion-at-point-functions', used by `completion-at-point'.
-    (add-to-list 'completion-at-point-functions #'cape-file)
-    ;; (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-    (add-to-list 'completion-at-point-functions #'cape-keyword))
-
+    (add-to-list 'completion-at-point-functions #'cape-file))
 #+end_src
+
+*** Yasnippets
+
+#+begin_src emacs-lisp
+  (use-package yasnippet-snippets)
+
+  (use-package yasnippet)
+#+end_src
+
 ** LSP
 *** Flycheck
 
@@ -580,22 +581,73 @@ Cool starting screen
     :init
     (defun my/lsp-mode-setup-completion ()
       (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-	    '(orderless-fast)))
+            '(orderless-fast)))
 
     (defun my/update-completions-list ()
       (progn
-	(fset 'non-greedy-lsp
-	      (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
-	(setq completion-at-point-functions
-	      '(non-greedy-lsp cape-file))))
+        (fset 'non-greedy-lsp
+              (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
+        (setq completion-at-point-functions
+              '(non-greedy-lsp cape-file))))
 
     :hook ((clojure-mode . lsp-deferred)
-	   (go-mode . lsp-deferred)
-	   (lsp-completion-mode . my/lsp-mode-setup-completion)
-	   (lsp-completion-mode . my/update-completions-list)
-	   (lsp-mode . lsp-enable-which-key-integration))
+           (go-mode . lsp-deferred)
+           (lsp-completion-mode . my/lsp-mode-setup-completion)
+           (lsp-completion-mode . my/update-completions-list)
+           (lsp-mode . yas-minor-mode)
+           (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp lsp-deferred)
 
   (use-package lsp-ui :commands lsp-ui-mode)
 #+end_src
 
+** UI
+*** Doom modeline
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :init
+    (setq doom-modeline-height 0)
+    :hook (after-init . doom-modeline-mode))
+#+end_src
+** Org Mode
+*** Org Package
+
+#+begin_src emacs-lisp
+  (defun my/org-mode-setup ()
+    (display-line-numbers-mode 0)
+
+    (org-indent-mode)
+    ;; (variable-pitch-mode 1)
+    (auto-fill-mode 0)
+    (visual-line-mode 1)
+
+    ;; Org tempo
+    (require 'org-tempo)
+
+    (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+    (add-to-list 'org-structure-template-alist '("py" . "src python")))
+
+  (use-package org
+    :hook
+    (org-mode . my/org-mode-setup)
+    :config
+    (setq org-ellipsis " ▾"
+          org-hide-emphasis-markers t))
+
+#+end_src
+
+*** Org Bullets
+
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :after org
+    :hook (org-mode . org-bullets-mode))
+#+end_src
+
+*** Org Present
+
+#+begin_src emacs-lisp
+  (use-package org-present
+    :commands (org-present))
+#+end_src
