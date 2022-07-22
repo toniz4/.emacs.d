@@ -97,6 +97,10 @@
    (mplex--face 'company-tooltip-annotation-selection
 		:inherit 'font-lock-comment-face
 		:foreground mplex-bg)
+   ;; Corfu
+   (mplex--face 'corfu-default :background mplex-lblack)
+   (mplex--face 'corfu-current :background mplex-grey)
+   (mplex--face 'corfu-bar :background mplex-grey)
 
    ;; flycheck
    (mplex--face 'flycheck-error :underline (list :style 'wave :color mplex-red))
