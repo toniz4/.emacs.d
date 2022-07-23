@@ -66,11 +66,11 @@
 (setq window-resize-pixelwise nil)
 
 (defun my/set-font-faces ()
-  (let* ((main-font "GoMono Nerd Font Mono 9")
+  (let* ((main-font "GoMono Nerd Font Mono")
          (fallback "monospace")
          (font (if (x-list-fonts main-font) main-font fallback)))
-    (set-face-attribute 'default nil :font font)
-    (set-face-attribute 'fixed-pitch nil :font font)))
+    (set-face-attribute 'default nil :font font :height 90)
+    (set-face-attribute 'fixed-pitch nil :font font :height 90)))
 
 (if (daemonp)
     (add-hook 'after-make-frame-functions
@@ -81,16 +81,6 @@
 (add-hook 'prog-mode-hook
           (lambda ()
             (electric-pair-local-mode t)))
-
-(defun my/org-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/.emacs.d/init.org"))
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
-
-(add-hook 'org-mode-hook
-          (lambda ()
-            (add-hook 'after-save-hook #'my/org-tangle-config)))
 
 (add-hook 'org-present-mode-hook
           (lambda ()

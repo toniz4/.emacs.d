@@ -30,6 +30,8 @@ This configurations aims to be for mainly working with programming in clojure, b
 
 This writes to /early-init.el/, disabling and elabling before early in the Emacs initialization
 
+*** Garbage Collection
+
 #+begin_src emacs-lisp :tangle ./early-init.el
   ;; -*- lexical-binding: t; -*-
 
@@ -39,9 +41,11 @@ This writes to /early-init.el/, disabling and elabling before early in the Emacs
 
   (add-hook 'emacs-startup-hook
             #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+#+end_src
 
-  ;; Data emacs reads from process
-  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+*** Native compilation
+
+#+begin_src emacs-lisp :tangle ./early-init.el
   ;; Compile warnings
   ;;  (setq warning-minimum-level :emergency)
   (setq native-comp-async-report-warnings-errors 'silent) ;; native-comp warning
@@ -51,8 +55,12 @@ This writes to /early-init.el/, disabling and elabling before early in the Emacs
         native-comp-deferred-compilation t
         native-comp-async-report-warnings-errors nil)
 
-  ;; MISC OPTIMIZATIONS ----
-    ;;; optimizations (froom Doom's core.el). See that file for descriptions.
+#+end_src
+
+*** Misc optimizations
+
+#+begin_src emacs-lisp :tangle ./early-init.el
+  ;; optimizations (froom Doom's core.el). See that file for descriptions.
   (setq idle-update-delay 1.0)
 
   ;; Disabling bidi (bidirectional editing stuff)
@@ -64,8 +72,23 @@ This writes to /early-init.el/, disabling and elabling before early in the Emacs
   (setq fast-but-imprecise-scrolling t)
   (setq inhibit-compacting-font-caches t)
 
-  ;; Disable default package.el
-  (setq package-enable-at-startup nil)
+  ;; Data emacs reads from process
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+#+end_src
+
+*** Disable default package.el
+
+Straight.el recommends this
+
+ #+begin_src emacs-lisp :tangle ./early-init.el
+    (setq package-enable-at-startup nil)
+#+end_src
+
+*** Tangle init.org file
+
+ #+begin_src emacs-lisp :tangle ./early-init.el
+  (require 'org)
+  (org-babel-tangle-file "/home/cassio/.emacs.d/init.org")
 #+end_src
 
 * General Config
@@ -147,11 +170,11 @@ Set the font /main-font/, if not avaliable, use /monospace/ as a fallback
 
 #+begin_src elisp
   (defun my/set-font-faces ()
-    (let* ((main-font "GoMono Nerd Font Mono 9")
+    (let* ((main-font "GoMono Nerd Font Mono")
            (fallback "monospace")
            (font (if (x-list-fonts main-font) main-font fallback)))
-      (set-face-attribute 'default nil :font font)
-      (set-face-attribute 'fixed-pitch nil :font font)))
+      (set-face-attribute 'default nil :font font :height 90)
+      (set-face-attribute 'fixed-pitch nil :font font :height 90)))
 
   (if (daemonp)
       (add-hook 'after-make-frame-functions
@@ -169,22 +192,6 @@ Only enable the electrip pair mode in the programming mode
   (add-hook 'prog-mode-hook
             (lambda ()
               (electric-pair-local-mode t)))
-#+end_src
-
-*** Org mode tangle
-
-This runs ~org-babel-tangle~ automaticaly when saving the /init.org/ file.
-
-#+begin_src emacs-lisp
-  (defun my/org-tangle-config ()
-    (when (string-equal (buffer-file-name)
-                        (expand-file-name "~/.emacs.d/init.org"))
-      (let ((org-confirm-babel-evaluate nil))
-        (org-babel-tangle))))
-
-  (add-hook 'org-mode-hook
-            (lambda ()
-              (add-hook 'after-save-hook #'my/org-tangle-config)))
 #+end_src
 
 *** Org present with visual fill column
@@ -603,12 +610,14 @@ Cool starting screen
 
 ** UI
 *** Doom modeline
+
 #+begin_src emacs-lisp
   (use-package doom-modeline
     :init
     (setq doom-modeline-height 0)
     :hook (after-init . doom-modeline-mode))
 #+end_src
+
 ** Org Mode
 *** Org Package
 
@@ -632,7 +641,7 @@ Cool starting screen
     :hook
     (org-mode . my/org-mode-setup)
     :config
-    (setq org-ellipsis " ▾"
+    (setq org-ellipsis " ▼"
           org-hide-emphasis-markers t))
 
 #+end_src

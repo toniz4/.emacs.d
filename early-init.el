@@ -7,8 +7,6 @@
 (add-hook 'emacs-startup-hook
           #'(lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
-;; Data emacs reads from process
-(setq read-process-output-max (* 1024 1024)) ;; 1mb
 ;; Compile warnings
 ;;  (setq warning-minimum-level :emergency)
 (setq native-comp-async-report-warnings-errors 'silent) ;; native-comp warning
@@ -18,8 +16,7 @@
       native-comp-deferred-compilation t
       native-comp-async-report-warnings-errors nil)
 
-;; MISC OPTIMIZATIONS ----
-  ;;; optimizations (froom Doom's core.el). See that file for descriptions.
+;; optimizations (froom Doom's core.el). See that file for descriptions.
 (setq idle-update-delay 1.0)
 
 ;; Disabling bidi (bidirectional editing stuff)
@@ -31,5 +28,10 @@
 (setq fast-but-imprecise-scrolling t)
 (setq inhibit-compacting-font-caches t)
 
-;; Disable default package.el
+;; Data emacs reads from process
+(setq read-process-output-max (* 1024 1024)) ;; 1mb
+
 (setq package-enable-at-startup nil)
+
+(require 'org)
+(org-babel-tangle-file "/home/cassio/.emacs.d/init.org")
