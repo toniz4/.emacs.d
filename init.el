@@ -218,7 +218,16 @@
    ;; "fr" '(counsel-recentf :which-key "recent files")
    "fR" '(rename-file :which-key "rename file")
    "fs" '(save-buffer :which-key "save buffer")
-   "fS" '(evil-write-all :which-key "save all buffers")))
+   "fS" '(evil-write-all :which-key "save all buffers")
+
+   ;; Help
+   "h" '(nil :which-key "help")
+   "hc" '(describe-char :which-key "describe char")
+   "hC" '(describe-command :which-key "describe command")
+   "hf" '(describe-function :which-key "describe function")
+   "hF" '(describe-function :which-key "describe face")
+   "hv" '(describe-variable :which-key "describe variable")
+   ))
 
 (use-package vertico
   :init
@@ -276,22 +285,74 @@
 
 (use-package cider
   :init
+  ;; This is the function that breaks apart the pattern.  To signal that
+  ;; an element is a package prefix, we keep its trailing "/" and return
+  ;; the rest as another pattern.
+  (defun my/cider-complete-at-point ()
+    "Complete the symbol at point."
+    (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
+      (when (and (cider-connected-p)
+                 (not (or (cider-in-string-p) (cider-in-comment-p))))
+        (list (car bounds) (cdr bounds)
+              (lambda (string pred action)
+                (cond ((eq action 'metadata) `(metadata (category . cider)))
+                      ((eq (car-safe action) 'boundaries) nil)
+                      (t (with-current-buffer (current-buffer)
+                           (complete-with-action action
+                                                 (cider-complete string) string pred)))))
+              :annotation-function #'cider-annotate-symbol
+              :company-kind #'cider-company-symbol-kind
+              :company-doc-buffer #'cider-create-doc-buffer
+              :company-location #'cider-company-location
+              :company-docsig #'cider-company-docsig
+              :exclusive 'no))))
+
+  (advice-add #'cider-complete-at-point :override #'my/cider-complete-at-point)
+
+  (add-to-list 'completion-category-defaults '(cider (styles basic)))
+
   (setq cider-show-error-buffer nil))
 
 (use-package python-mode)
 
+;; (use-package orderless
+;;   :init
+;;   ;; (defun orderless-fast-dispatch (word index total)
+;;   ;;   (and (= index 0) (= total 1) (length< word 4)
+;;   ;;        `(orderless-regexp . ,(concat "^" (regexp-quote word)))))
+
+;;   ;; (orderless-define-completion-style orderless-fast
+;;   ;;   (orderless-dispatch '(orderless-fast-dispatch))
+;;   ;;   (orderless-matching-styles '(orderless-literal orderless-regexp)))
+;;   :custom
+;;   (completion-styles '(orderless))
+;;   (completion-category-overrides '((file (styles basic partial-completion)))))
+
 (use-package orderless
+  :config
+  (defmacro dispatch: (regexp style)
+    (cl-flet ((symcat (a b) (intern (concat a (symbol-name b)))))
+      `(defun ,(symcat "dispatch:" style) (pattern _index _total)
+         (when (string-match ,regexp pattern)
+           (cons ',(symcat "orderless-" style) (match-string 1 pattern))))))
+  (cl-flet ((pre/post (str) (format "^%s\\(.*\\)$\\|^\\(?1:.*\\)%s$" str str)))
+    (dispatch: (pre/post "=") literal)
+    (dispatch: (pre/post "`") regexp)
+    (dispatch: (pre/post (if (or minibuffer-completing-file-name
+                                 (derived-mode-p 'eshell-mode))
+                             "%" "[%.]"))
+               initialism))
+  (dispatch: "^{\\(.*\\)}$" flex)
+  (dispatch: "^\\([^][^\\+*]*[./-][^][\\+*$]*\\)$" prefixes)
+  (dispatch: "^!\\(.+\\)$" without-literal)
   :custom
-  (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles basic partial-completion)))))
-
-(defun orderless-fast-dispatch (word index total)
-  (and (= index 0) (= total 1) (length< word 4)
-       `(orderless-regexp . ,(concat "^" (regexp-quote word)))))
-
-(orderless-define-completion-style orderless-fast
-  (orderless-dispatch '(orderless-fast-dispatch))
-  (orderless-matching-styles '(orderless-literal orderless-regexp)))
+  (completion-styles '(orderless))
+  (completion-category-overrides '((file (styles basic partial-completion))))
+  (orderless-matching-styles 'orderless-regexp)
+  (orderless-style-dispatchers
+   '(dispatch:literal dispatch:regexp dispatch:without-literal
+     dispatch:initialism dispatch:flex dispatch:prefixes))
+  (orderless-component-separator #'orderless-escapable-split-on-space))
 
 (use-package corfu
   ;; Optional customizations
@@ -301,16 +362,12 @@
   (corfu-auto-delay 0)
   (corfu-auto-prefix 0)
   (corfu-separator ?\s)             ;; Orderless field separator
-  (corfu-quit-at-boundary nil)      ;; Never quit at completion boundary
-  (corfu-quit-no-match t)           ;; Never quit, even if there is no match
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+  (corfu-quit-at-boundary 'separator)      ;; Never quit at completion boundary
+  (corfu-quit-no-match nil)           ;; Never quit, even if there is no match
   (corfu-preselect-first nil)       ;; Disable candidate preselection
-  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-  ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
-  (completion-styles '(orderless-fast basic))
-  (completion-category-overrides '((file (styles basic partial-completion))))
   :bind
   (:map corfu-map
+        ("C-s" . corfu-quit)
         ("TAB" . corfu-next)
         ([tab] . corfu-next)
         ("S-TAB" . corfu-previous)
@@ -338,7 +395,7 @@
   :init
   (defun my/lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless-fast)))
+          '(basic)))
 
   (defun my/update-completions-list ()
     (progn
@@ -381,7 +438,7 @@
   :hook
   (org-mode . my/org-mode-setup)
   :config
-  (setq org-ellipsis " ▾"
+  (setq org-ellipsis " ▼"
         org-hide-emphasis-markers t))
 
 (use-package org-bullets
