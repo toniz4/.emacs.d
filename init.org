@@ -217,6 +217,7 @@ Only enable the electrip pair mode in the programming mode
 #+end_src
 
 ** Custom Functions
+*** Interactive Functions
 
 #+begin_src emacs-lisp
   ;; Switch to the scratch buffer
@@ -227,6 +228,15 @@ Only enable the electrip pair mode in the programming mode
   (defun my/switch-to-dashboard-buffer ()
     (interactive)
     (switch-to-buffer "*dashboard*"))
+
+  (defun 0x0-buffer ()
+    (interactive)
+    (if-let ((filename (buffer-file-name))
+             (curl (executable-find "curl")))
+        (make-process
+         :name "cu"
+         :command `("curl" "-F" ,(concat "file=@" filename) "https://0x0.st")
+         :filter (lambda (x y) (kill-new y)))))
 #+end_src
 
 ** Bookmarks 
@@ -374,7 +384,7 @@ Make using emacs a good experience
      "hc" '(describe-char :which-key "describe char")
      "hC" '(describe-command :which-key "describe command")
      "hf" '(describe-function :which-key "describe function")
-     "hF" '(describe-function :which-key "describe face")
+     "hF" '(describe-face :which-key "describe face")
      "hv" '(describe-variable :which-key "describe variable")
      ))
 #+end_src
@@ -632,7 +642,7 @@ Cool starting screen
     :init
     (defun my/lsp-mode-setup-completion ()
       (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-            '(basic)))
+            '(orderless)))
 
     (defun my/update-completions-list ()
       (progn

@@ -105,6 +105,15 @@
   (interactive)
   (switch-to-buffer "*dashboard*"))
 
+(defun 0x0-buffer ()
+  (interactive)
+  (if-let ((filename (buffer-file-name))
+           (curl (executable-find "curl")))
+      (make-process
+       :name "cu"
+       :command `("curl" "-F" ,(concat "file=@" filename) "https://0x0.st")
+       :filter (lambda (x y) (kill-new y)))))
+
 (setq bookmark-save-flag 1
       bookmark-set-fringe-mark nil)
 
@@ -225,7 +234,7 @@
    "hc" '(describe-char :which-key "describe char")
    "hC" '(describe-command :which-key "describe command")
    "hf" '(describe-function :which-key "describe function")
-   "hF" '(describe-function :which-key "describe face")
+   "hF" '(describe-face :which-key "describe face")
    "hv" '(describe-variable :which-key "describe variable")
    ))
 
@@ -285,9 +294,6 @@
 
 (use-package cider
   :init
-  ;; This is the function that breaks apart the pattern.  To signal that
-  ;; an element is a package prefix, we keep its trailing "/" and return
-  ;; the rest as another pattern.
   (defun my/cider-complete-at-point ()
     "Complete the symbol at point."
     (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
@@ -315,19 +321,6 @@
 
 (use-package python-mode)
 
-;; (use-package orderless
-;;   :init
-;;   ;; (defun orderless-fast-dispatch (word index total)
-;;   ;;   (and (= index 0) (= total 1) (length< word 4)
-;;   ;;        `(orderless-regexp . ,(concat "^" (regexp-quote word)))))
-
-;;   ;; (orderless-define-completion-style orderless-fast
-;;   ;;   (orderless-dispatch '(orderless-fast-dispatch))
-;;   ;;   (orderless-matching-styles '(orderless-literal orderless-regexp)))
-;;   :custom
-;;   (completion-styles '(orderless))
-;;   (completion-category-overrides '((file (styles basic partial-completion)))))
-
 (use-package orderless
   :config
   (defmacro dispatch: (regexp style)
@@ -335,6 +328,7 @@
       `(defun ,(symcat "dispatch:" style) (pattern _index _total)
          (when (string-match ,regexp pattern)
            (cons ',(symcat "orderless-" style) (match-string 1 pattern))))))
+
   (cl-flet ((pre/post (str) (format "^%s\\(.*\\)$\\|^\\(?1:.*\\)%s$" str str)))
     (dispatch: (pre/post "=") literal)
     (dispatch: (pre/post "`") regexp)
@@ -342,6 +336,7 @@
                                  (derived-mode-p 'eshell-mode))
                              "%" "[%.]"))
                initialism))
+
   (dispatch: "^{\\(.*\\)}$" flex)
   (dispatch: "^\\([^][^\\+*]*[./-][^][\\+*$]*\\)$" prefixes)
   (dispatch: "^!\\(.+\\)$" without-literal)
@@ -395,7 +390,7 @@
   :init
   (defun my/lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(basic)))
+          '(orderless)))
 
   (defun my/update-completions-list ()
     (progn

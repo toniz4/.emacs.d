@@ -1,6 +1,16 @@
-(deftheme mplex "Simple minimal theme")
+;;; mplex-teme.el --- Simple dark theme -*- lexical-binding: t; -*-
+
+;;; Commentary:
+;;
+;; This is a simple dark theme for Emacs.
+;;
+
+;;; Code:
+
+(deftheme mplex "Simple minimal theme.")
 
 (defun mplex--face (name &rest args)
+  "Receives a face in NAME and apply ARGS."
   (list name `((t ,args))))
 
 (let* ((class '((class color) (min-colors #xFFFFFF)))
@@ -39,6 +49,7 @@
    (mplex--face 'custom-face-tag :inherit 'default)
    (mplex--face 'custom-state :inherit 'default)
    (mplex--face 'line-number :foreground mplex-grey)
+   (mplex--face 'line-number-current-line :foreground mplex-grey :bold t)
    (mplex--face 'show-paren-match :background mplex-bg :foreground mplex-yellow :bold t)
 
    (mplex--face 'isearch :foreground mplex-bg :background mplex-yellow)
@@ -103,18 +114,22 @@
    (mplex--face 'corfu-bar :background mplex-grey)
 
    ;; flycheck
-   (mplex--face 'flycheck-error :underline (list :style 'wave :color mplex-red))
-   (mplex--face 'flycheck-warning :underline (list :style 'wave :color mplex-yellow))
-   (mplex--face 'flycheck-info :underline (list :style 'wave :color mplex-blue))
+   (mplex--face 'flycheck-error :underline `(:style wave :color ,mplex-red))
+   (mplex--face 'flycheck-warning :underline `(:style wave :color ,mplex-yellow))
+   (mplex--face 'flycheck-info :underline `(:style wave :color ,mplex-blue))
+
+   ;; Orderless
+   (mplex--face 'orderless-match-face-0 :foreground mplex-blue)
+   (mplex--face 'orderless-match-face-1 :foreground mplex-magenta)
+   (mplex--face 'orderless-match-face-2 :foreground mplex-cyan)
+   (mplex--face 'orderless-match-face-3 :foreground mplex-green)
 
    ;; Lsp ui
    (mplex--face 'lsp-face-highlight-textual :background mplex-grey)
    ;; Org mode
    (mplex--face 'org-block :inherit 'default :background mplex-lblack :extend t)
-
    (mplex--face 'org-block-begin-line :inherit 'org-block :foreground mplex-grey)
    (mplex--face 'org-block-end-line :inherit 'org-block-begin-line)
-
    (mplex--face 'org-ellipsis :inherit 'font-lock-comment-face)))
 
 (when load-file-name
