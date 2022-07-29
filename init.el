@@ -212,7 +212,7 @@
    ;; Buffes 
    "b" '(nil :which-key "buffer")
    "ba" '(bookmark-set :which-key "set bookmark")
-   "bb" '(switch-to-buffer :which-key "switch buffers")
+   "bb" '(consult-buffer :which-key "switch buffers")
    "bd" '(evil-delete-buffer :which-key "delete buffer")
    "bk" '(kill-buffer :which-key "kill other buffers")
    "bs" '(my/switch-to-scratch-buffer :which-key "scratch buffer")
@@ -228,6 +228,8 @@
    "fR" '(rename-file :which-key "rename file")
    "fs" '(save-buffer :which-key "save buffer")
    "fS" '(evil-write-all :which-key "save all buffers")
+   "fg" '(consult-ripgrep :which-key "ripgrep")
+   "fG" '(consult-grep :which-key "grep")
 
    ;; Help
    "h" '(nil :which-key "help")
@@ -235,8 +237,7 @@
    "hC" '(describe-command :which-key "describe command")
    "hf" '(describe-function :which-key "describe function")
    "hF" '(describe-face :which-key "describe face")
-   "hv" '(describe-variable :which-key "describe variable")
-   ))
+   "hv" '(describe-variable :which-key "describe variable")))
 
 (use-package vertico
   :init
@@ -246,6 +247,12 @@
 
   (vertico-mode)
   (setq vertico-scroll-margin 2))
+
+(use-package consult)
+
+(use-package consult-lsp)
+
+(use-package consult-flycheck)
 
 (use-package which-key
   :config
@@ -262,22 +269,23 @@
 (use-package magit
   :commands (magit-status))
 
-(use-package rainbow-mode)
-
-(use-package dashboard
-  :config
-  (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-  (setq dashboard-startup-banner 'logo)
-  (setq dashboard-center-content t)
-
-  (dashboard-setup-startup-hook))
-
-(use-package visual-fill-column
-  :commands
-  (visual-fill-column-mode)
+(use-package haskell-mode
   :init
-  (setq visual-fill-column-center-text t
-        visual-fill-column-width 110))
+  (defun haskell-evil-open-above ()
+    (interactive)
+    (evil-digit-argument-or-evil-beginning-of-line)
+    (haskell-indentation-newline-and-indent)
+    (evil-previous-line)
+    (haskell-indentation-indent-line)
+    (evil-append-line nil))
+
+  (defun haskell-evil-open-below ()
+    (interactive)
+    (evil-append-line nil)
+    (haskell-indentation-newline-and-indent))
+
+  (evil-define-key 'normal haskell-mode-map "o" 'haskell-evil-open-below
+    "O" 'haskell-evil-open-above))
 
 (use-package fish-mode)
 
@@ -299,27 +307,20 @@
     (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
       (when (and (cider-connected-p)
                  (not (or (cider-in-string-p) (cider-in-comment-p))))
-        (list (car bounds) (cdr bounds)
-              (lambda (string pred action)
-                (cond ((eq action 'metadata) `(metadata (category . cider)))
-                      ((eq (car-safe action) 'boundaries) nil)
-                      (t (with-current-buffer (current-buffer)
-                           (complete-with-action action
-                                                 (cider-complete string) string pred)))))
-              :annotation-function #'cider-annotate-symbol
-              :company-kind #'cider-company-symbol-kind
-              :company-doc-buffer #'cider-create-doc-buffer
-              :company-location #'cider-company-location
-              :company-docsig #'cider-company-docsig
-              :exclusive 'no))))
+        (let ((table (cider-complete "")))
+          (message "%s" table)
+          `(,(line-beginning-position) ,(point)
+            ,(cape--table-with-properties table :sort nil :category 'cider))))))
 
   (advice-add #'cider-complete-at-point :override #'my/cider-complete-at-point)
 
-  (add-to-list 'completion-category-defaults '(cider (styles basic)))
+  (add-to-list 'completion-category-defaults '(cider (styles orderless)))
 
   (setq cider-show-error-buffer nil))
 
 (use-package python-mode)
+
+(use-package scad-mode)
 
 (use-package orderless
   :config
@@ -442,3 +443,23 @@
 
 (use-package org-present
   :commands (org-present))
+
+(use-package rainbow-mode)
+
+(use-package dashboard
+  :config
+  (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+  (setq dashboard-startup-banner 'logo)
+  (setq dashboard-center-content t)
+
+  (dashboard-setup-startup-hook))
+
+(use-package visual-fill-column
+  :commands
+  (visual-fill-column-mode)
+  :init
+  (setq visual-fill-column-center-text t
+        visual-fill-column-width 110))
+
+(use-package 2048-game
+  :commands (2048-game))
