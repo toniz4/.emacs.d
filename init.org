@@ -7,6 +7,33 @@
 
 This configurations aims to be for mainly working with programming in clojure, but be flexible enought to use it with another languages like go, elixir, c, etc..
 
+** Style
+
+Use the following ordering for `use-package` keywords:
+- ~:preface~
+- ~:straight~
+- ~:no-require~
+- ~:defines~
+- ~:functions~
+- ~:demand~
+- ~:defer~
+- ~:after~
+- ~:commands~
+- ~:init/el-patch~
+- ~:init~
+- ~:magic~
+- ~:mode~
+- ~:interpreter~
+- ~:hook~
+- ~:general~
+- ~:bind~
+- ~:bind*~
+- ~:bind-keymap~
+- ~:bind-keymap*~
+- ~:config/el-patch~
+- ~:config~
+- ~:blackout~
+
 ** Init file header
 
 #+begin_src emacs-lisp 
@@ -169,7 +196,7 @@ Remove ugly stuff, add pretty stuff
 Set the font /main-font/, if not avaliable, use /monospace/ as a fallback
 
 #+begin_src elisp
-  (defun my/set-font-faces ()
+  (defun my-set-font-faces ()
     (let* ((main-font "GoMono Nerd Font Mono")
            (fallback "monospace")
            (font (if (x-list-fonts main-font) main-font fallback)))
@@ -179,8 +206,8 @@ Set the font /main-font/, if not avaliable, use /monospace/ as a fallback
   (if (daemonp)
       (add-hook 'after-make-frame-functions
                 (lambda (frame)
-                  (with-selected-frame frame (my/set-font-faces))))
-    (my/set-font-faces))
+                  (with-selected-frame frame (my-set-font-faces))))
+    (my-set-font-faces))
 #+END_SRC
 
 ** Hooks
@@ -214,6 +241,18 @@ Only enable the electrip pair mode in the programming mode
   (add-hook 'go-mode-hook
             (lambda ()
               (setq-local tab-width 4)))
+
+  (add-hook 'sh-mode-hook
+            (lambda ()
+              (setq-local tab-width 4)))
+#+end_src
+
+*** DocView
+
+#+begin_src emacs-lisp
+  (add-hook 'doc-view-mode-hook
+            (lambda ()
+              (display-line-numbers-mode 0)))
 #+end_src
 
 ** Custom Functions
@@ -221,15 +260,15 @@ Only enable the electrip pair mode in the programming mode
 
 #+begin_src emacs-lisp
   ;; Switch to the scratch buffer
-  (defun my/switch-to-scratch-buffer ()
+  (defun my-switch-to-scratch-buffer ()
     (interactive)
     (switch-to-buffer "*scratch*"))
 
-  (defun my/switch-to-dashboard-buffer ()
+  (defun my-switch-to-dashboard-buffer ()
     (interactive)
     (switch-to-buffer "*dashboard*"))
 
-  (defun 0x0-buffer ()
+  (defun upload-buffer-file-to-0x0 ()
     (interactive)
     (if-let ((filename (buffer-file-name))
              (curl (executable-find "curl")))
@@ -237,6 +276,22 @@ Only enable the electrip pair mode in the programming mode
          :name "cu"
          :command `("curl" "-F" ,(concat "file=@" filename) "https://0x0.st")
          :filter (lambda (x y) (kill-new y)))))
+
+  (defun my-open-eshell ()
+    (interactive)
+    (dlet ((eshell-buffer-name "*eshell session*"))
+      (cond ((equal (get-buffer eshell-buffer-name) (window-buffer (selected-window))) 
+             (select-window (get-mru-window t t t))) ;; Focused on eshell buffer
+
+            ((get-buffer-window eshell-buffer-name)
+             (switch-to-buffer-other-window eshell-buffer-name)) ;; Visible in frame
+
+            (t
+             (let ((buf (eshell))) ;; Buffer does not exist
+               (display-buffer buf '(display-buffer-below-selected . ((window-height . 10))))
+               (switch-to-buffer (other-buffer buf))
+               (switch-to-buffer-other-window buf))))))
+  ;; (my-open-eshell)
 #+end_src
 
 ** Bookmarks 
@@ -245,10 +300,10 @@ Only enable the electrip pair mode in the programming mode
   (setq bookmark-save-flag 1
         bookmark-set-fringe-mark nil)
 
-  (defun my/bookmark-make-record ()
+  (defun my-bookmark-make-record ()
     `((filename . ,(buffer-file-name))))
 
-  (setq bookmark-make-record-function #'my/bookmark-make-record)
+  (setq bookmark-make-record-function #'my-bookmark-make-record)
 #+end_src
 
 ** Save place mode
@@ -293,7 +348,7 @@ Bootstraps straight.el
 Make using emacs a good experience
 
 #+begin_src emacs-lisp
-  (defun my/set-evil-keybinds ()
+  (defun my-set-evil-keybinds ()
     (evil-set-leader 'normal (kbd "SPC"))
     (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
     (evil-define-key 'normal 'global (kbd "<leader>ss") 'sp-forward-slurp-sexp)
@@ -352,26 +407,29 @@ Make using emacs a good experience
      :states '(normal motion visual)
      :keymaps 'override
      :prefix "SPC"
-     ;; Applications
-     "a" '(nil :which-key "applications")
-     "ag" '(magit-status :which-key "magit")
-     "ad" '(my/switch-to-dashboard-buffer :which-key "dashboard")
 
      "SPC" '(execute-extended-command :which-key "M-x")
      "q" '(save-buffers-kill-emacs :which-key "quit emacs")
+     "'" '(my-open-eshell :which-key "eshell")
+
+     ;; Applications
+     "a" '(nil :which-key "applications")
+     "ag" '(magit-status :which-key "magit")
+     "ad" '(my-switch-to-dashboard-buffer :which-key "dashboard")
+
      ;; Buffes 
      "b" '(nil :which-key "buffer")
      "ba" '(bookmark-set :which-key "set bookmark")
      "bb" '(consult-buffer :which-key "switch buffers")
      "bd" '(evil-delete-buffer :which-key "delete buffer")
      "bk" '(kill-buffer :which-key "kill other buffers")
-     "bs" '(my/switch-to-scratch-buffer :which-key "scratch buffer")
+     "bs" '(my-switch-to-scratch-buffer :which-key "scratch buffer")
      "bi" '(clone-indirect-buffer  :which-key "indirect buffer")
      "br" '(revert-buffer :which-key "revert buffer")
 
      ;; Files
      "f" '(nil :which-key "files")
-     "fb" '(counsel-bookmark :which-key "bookmarks")
+     "fb" '(consult-bookmark :which-key "bookmarks")
      "ff" '(find-file :which-key "find file")
      ;; "fn" '(new-file :which-key "new file")
      ;; "fr" '(counsel-recentf :which-key "recent files")
@@ -461,29 +519,69 @@ Use direnv when changind directories in emacs
     :commands (magit-status))
 #+end_src
 
-** Language modes
-*** Haskell
+*** Eldoc
 
 #+begin_src emacs-lisp
-  (use-package haskell-mode
-    :init
-    (defun haskell-evil-open-above ()
-      (interactive)
-      (evil-digit-argument-or-evil-beginning-of-line)
-      (haskell-indentation-newline-and-indent)
-      (evil-previous-line)
-      (haskell-indentation-indent-line)
-      (evil-append-line nil))
-
-    (defun haskell-evil-open-below ()
-      (interactive)
-      (evil-append-line nil)
-      (haskell-indentation-newline-and-indent))
-
-    (evil-define-key 'normal haskell-mode-map "o" 'haskell-evil-open-below
-      "O" 'haskell-evil-open-above))
+  (use-package eldoc
+    :custom
+    (eldoc-echo-area-use-multiline-p 2)
+    (eldoc-echo-area-display-truncation-message nil))
 #+end_src
 
+*** Flymake diagnostic at point
+
+#+begin_src emacs-lisp
+  ;; (use-package flymake-diagnostic-at-point
+  ;;   :custom
+  ;;   (flymake-diagnostic-at-point-error-prefix "→ ")
+  ;;   :hook
+  ;;   ((flymake-mode . flymake-diagnostic-at-point-mode)))
+#+end_src
+
+*** Sideline
+
+#+begin_src emacs-lisp
+  (use-package sideline
+    :custom
+    (sideline-backends-right '(sideline-flymake))
+    (sideline-backends-right-skip-current-line nil)
+    (sideline-order-right 'down)
+    (sideline-format-right "%s  "))
+
+
+  (use-package sideline-flymake
+    :straight
+    (sideline-flymake :type git :host github :repo "emacs-sideline/sideline-flymake")
+    :init
+    (defun my-sideline-flymake-show-errors (callback &rest _)
+      "Execute CALLBACK to display with sideline."
+      (when flymake-mode
+        (when-let ((errors (sideline-flymake--get-errors)))
+          (dolist (err errors)
+            (let* ((text (flymake-diagnostic-text err))
+                   (type (flymake-diagnostic-type err))
+                   (face (cl-case type
+                           (:error 'error)
+                           ('eglot-error 'error)
+                           (:warning 'warning)
+                           ('eglot-warning 'warning)
+                           (t 'success))))
+              (add-face-text-property 0 (length text) face nil text)
+              (funcall callback (list text)))))))
+
+    (defun my-sideline-flymake-get-errors ()
+      "Return flymake errors."
+      ;; Don't need to take care of the region, since sideline cannot display with
+      ;; region is active.
+      (flymake-diagnostics (line-beginning-position) (line-end-position)))
+
+    (advice-add #'sideline-flymake--show-errors :override #'my-sideline-flymake-show-errors)
+    (advice-add #'sideline-flymake--get-errors :override #'my-sideline-flymake-get-errors)
+    :custom
+    (sideline-order-right 'up))
+#+end_src
+
+** Language modes
 *** Fish
 
 #+begin_src emacs-lisp
@@ -522,19 +620,8 @@ Use direnv when changind directories in emacs
 
   (use-package cider
     :init
-    (defun my/cider-complete-at-point ()
-      "Complete the symbol at point."
-      (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
-        (when (and (cider-connected-p)
-                   (not (or (cider-in-string-p) (cider-in-comment-p))))
-          (let ((table (cider-complete "")))
-            (message "%s" table)
-            `(,(line-beginning-position) ,(point)
-              ,(cape--table-with-properties table :sort nil :category 'cider))))))
 
-    (advice-add #'cider-complete-at-point :override #'my/cider-complete-at-point)
-
-    (add-to-list 'completion-category-defaults '(cider (styles orderless)))
+    (add-to-list 'completion-category-defaults '(cider (styles basic)))
 
     (setq cider-show-error-buffer nil))
 #+end_src
@@ -549,131 +636,6 @@ Use direnv when changind directories in emacs
 
 #+begin_src emacs-lisp
   (use-package scad-mode)
-#+end_src
-
-** Text Completion
-*** Orderless
-
-#+begin_src emacs-lisp
-  (use-package orderless
-    :config
-    (defmacro dispatch: (regexp style)
-      (cl-flet ((symcat (a b) (intern (concat a (symbol-name b)))))
-        `(defun ,(symcat "dispatch:" style) (pattern _index _total)
-           (when (string-match ,regexp pattern)
-             (cons ',(symcat "orderless-" style) (match-string 1 pattern))))))
-
-    (cl-flet ((pre/post (str) (format "^%s\\(.*\\)$\\|^\\(?1:.*\\)%s$" str str)))
-      (dispatch: (pre/post "=") literal)
-      (dispatch: (pre/post "`") regexp)
-      (dispatch: (pre/post (if (or minibuffer-completing-file-name
-                                   (derived-mode-p 'eshell-mode))
-                               "%" "[%.]"))
-                 initialism))
-
-    (dispatch: "^{\\(.*\\)}$" flex)
-    (dispatch: "^\\([^][^\\+*]*[./-][^][\\+*$]*\\)$" prefixes)
-    (dispatch: "^!\\(.+\\)$" without-literal)
-    :custom
-    (completion-styles '(orderless))
-    (completion-category-overrides '((file (styles basic partial-completion))))
-    (orderless-matching-styles 'orderless-regexp)
-    (orderless-style-dispatchers
-     '(dispatch:literal dispatch:regexp dispatch:without-literal
-       dispatch:initialism dispatch:flex dispatch:prefixes))
-    (orderless-component-separator #'orderless-escapable-split-on-space))
-#+end_src
-
-*** Corfu
-
-#+begin_src elisp
-
-  (use-package corfu
-    ;; Optional customizations
-    :custom
-    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-    (corfu-auto t)                 ;; Enable auto completion
-    (corfu-auto-delay 0)
-    (corfu-auto-prefix 0)
-    (corfu-separator ?\s)             ;; Orderless field separator
-    (corfu-quit-at-boundary 'separator)      ;; Never quit at completion boundary
-    (corfu-quit-no-match nil)           ;; Never quit, even if there is no match
-    (corfu-preselect-first nil)       ;; Disable candidate preselection
-    :bind
-    (:map corfu-map
-          ("C-s" . corfu-quit)
-          ("TAB" . corfu-next)
-          ([tab] . corfu-next)
-          ("S-TAB" . corfu-previous)
-          ([backtab] . corfu-previous))
-    :hook ((prog-mode . corfu-mode)
-           (shell-mode . corfu-mode)
-           (eshell-mode . corfu-mode)))
-#+end_src
-
-*** Cape
-
-#+begin_src emacs-lisp
-  (use-package cape
-    ;; Bind dedicated completion commands
-    :init
-    (add-to-list 'completion-at-point-functions #'cape-file))
-#+end_src
-
-*** Yasnippets
-
-#+begin_src emacs-lisp
-  (use-package yasnippet-snippets)
-
-  (use-package yasnippet)
-#+end_src
-
-** LSP
-*** Flycheck
-
-#+begin_src emacs-lisp
-  (use-package flycheck)
-#+end_src
-
-*** Lsp Mode
-
-#+begin_src emacs-lisp
-  (use-package lsp-mode
-    :custom
-    (lsp-completion-provider :none)
-    (lsp-keymap-prefix "C-c l")
-    (lsp-headerline-breadcrumb-enable nil)
-    :init
-    (defun my/lsp-mode-setup-completion ()
-      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-            '(orderless)))
-
-    (defun my/update-completions-list ()
-      (progn
-        (fset 'non-greedy-lsp
-              (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
-        (setq completion-at-point-functions
-              '(non-greedy-lsp cape-file))))
-
-    :hook ((clojure-mode . lsp-deferred)
-           (go-mode . lsp-deferred)
-           (lsp-completion-mode . my/lsp-mode-setup-completion)
-           (lsp-completion-mode . my/update-completions-list)
-           (lsp-mode . yas-minor-mode)
-           (lsp-mode . lsp-enable-which-key-integration))
-    :commands lsp lsp-deferred)
-
-  (use-package lsp-ui :commands lsp-ui-mode)
-#+end_src
-
-** UI
-*** Doom modeline
-
-#+begin_src emacs-lisp
-  (use-package doom-modeline
-    :init
-    (setq doom-modeline-height 0)
-    :hook (after-init . doom-modeline-mode))
 #+end_src
 
 ** Org Mode
@@ -719,44 +681,162 @@ Use direnv when changind directories in emacs
     :commands (org-present))
 #+end_src
 
-** Misc packages
-*** Rainbow Mode
-
-Highlights RGB text in files
+** Text Completion
+*** Orderless
 
 #+begin_src emacs-lisp
-  (use-package rainbow-mode)
+  (use-package orderless
+    :config
+    (defmacro dispatch: (regexp style)
+      (cl-flet ((symcat (a b) (intern (concat a (symbol-name b)))))
+        `(defun ,(symcat "dispatch:" style) (pattern _index _total)
+           (when (string-match ,regexp pattern)
+             (cons ',(symcat "orderless-" style) (match-string 1 pattern))))))
+
+    (cl-flet ((pre/post (str) (format "^%s\\(.*\\)$\\|^\\(?1:.*\\)%s$" str str)))
+      (dispatch: (pre/post "=") literal)
+      (dispatch: (pre/post "`") regexp)
+      (dispatch: (pre/post (if (or minibuffer-completing-file-name
+                                   (derived-mode-p 'eshell-mode))
+                               "%" "[%.]"))
+                 initialism))
+
+    (dispatch: "^{\\(.*\\)}$" flex)
+    (dispatch: "^\\([^][^\\+*]*[./-][^][\\+*$]*\\)$" prefixes)
+    (dispatch: "^!\\(.+\\)$" without-literal)
+    :custom
+    (completion-styles '(orderless))
+    (completion-category-overrides '((file (styles basic partial-completion))))
+    (orderless-matching-styles 'orderless-regexp)
+    (orderless-style-dispatchers
+     '(dispatch:literal dispatch:regexp dispatch:without-literal
+       dispatch:initialism dispatch:flex dispatch:prefixes))
+    (orderless-component-separator #'orderless-escapable-split-on-space))
+#+end_src
+
+*** Corfu
+
+#+begin_src elisp
+  (use-package corfu
+    :custom
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    (corfu-auto-delay 0)
+    (corfu-auto-prefix 3)
+    (corfu-separator ?\s)             ;; Orderless field separator
+    (corfu-quit-at-boundary 'separator)      ;; Never quit at completion boundary
+    (corfu-quit-no-match nil)           ;; Never quit, even if there is no match
+    (corfu-preselect-first nil)       ;; Disable candidate preselection
+    :init
+    (defun corfu-enable-in-minibuffer ()
+      "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+      (when (where-is-internal #'completion-at-point (list (current-local-map)))
+        (corfu-mode 1)))
+    :bind
+    (:map corfu-map
+          ("C-s" . corfu-quit)
+          ("TAB" . corfu-next)
+          ([tab] . corfu-next)
+          ("S-TAB" . corfu-previous)
+          ([backtab] . corfu-previous))
+    :hook ((prog-mode . corfu-mode)
+           (shell-mode . corfu-mode)
+           (minibuffer-setup . corfu-enable-in-minibuffer)
+           (eshell-mode . corfu-mode)))
+#+end_src
+
+*** Corfu Doc
+
+#+begin_src emacs-lisp
+  (use-package corfu-doc
+    :hook
+    (corfu-mode . corfu-doc-mode)
+    :bind
+    (:map corfu-map
+          ("M-p" . corfu-doc-scroll-down)
+          ("M-n" . corfu-doc-scroll-up)))
+#+end_src
+
+*** Cape
+
+#+begin_src emacs-lisp
+  (use-package cape
+    ;; Bind dedicated completion commands
+    :init
+    (add-to-list 'completion-at-point-functions #'cape-file))
+#+end_src
+
+*** Yasnippets
+
+#+begin_src emacs-lisp
+  (use-package yasnippet-snippets)
+
+  (use-package yasnippet)
+ #+end_src
+
+** LSP
+*** Flycheck
+
+#+begin_src emacs-lisp
+  (use-package flycheck
+    :commands flycheck-mode)
+#+end_src
+
+*** LSP mode
+#+begin_src emacs-lisp
+  (use-package lsp-mode
+    :custom
+    (lsp-completion-provider :none)
+    (lsp-keymap-prefix "C-c l")
+    (lsp-headerline-breadcrumb-enable nil)
+    :init
+    (defun my/lsp-mode-setup-completion ()
+      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+            '(orderless)))
+
+    (defun my/update-completions-list ()
+      (progn
+        (fset 'non-greedy-lsp
+              (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
+        (setq completion-at-point-functions
+              '(non-greedy-lsp cape-file))))
+
+    :hook ((clojure-mode . lsp-deferred)
+           (go-mode . lsp-deferred)
+           (lsp-completion-mode . my/lsp-mode-setup-completion)
+           (lsp-completion-mode . my/update-completions-list)
+           (lsp-mode . yas-minor-mode)
+           (lsp-mode . lsp-enable-which-key-integration))
+    :commands lsp lsp-deferred)
+
+  (use-package lsp-ui :commands lsp-ui-mode)
+#+end_src
+
+** UI
+*** Doom modeline
+
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :init
+    (setq doom-modeline-height 0)
+    :hook (after-init . doom-modeline-mode))
+#+end_src
+
+** Misc
+*** Rainbow mode
+
+#+begin_src emacs-lisp
+  (use-package rainbow-mode
+    :commands rainbow-mode)
 #+end_src
 
 *** Dashboard
-
-Cool starting screen
 
 #+begin_src emacs-lisp
   (use-package dashboard
     :config
     (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-    (setq dashboard-startup-banner 'logo)
-    (setq dashboard-center-content t)
-
-    (dashboard-setup-startup-hook))
-#+end_src
-
-*** Visual Fill Column
-
-#+begin_src emacs-lisp
-  (use-package visual-fill-column
-    :commands
-    (visual-fill-column-mode)
-    :init
-    (setq visual-fill-column-center-text t
-          visual-fill-column-width 110))
-#+end_src
-
-** Games
-*** 2048
-
-#+begin_src emacs-lisp
-  (use-package 2048-game
-    :commands (2048-game))
+    :custom
+    (dashboard-startup-banner 'logo)
+    (dashboard-center-content t))
 #+end_src

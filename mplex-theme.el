@@ -130,7 +130,8 @@
    (mplex--face 'org-block :inherit 'default :background mplex-lblack :extend t)
    (mplex--face 'org-block-begin-line :inherit 'org-block :foreground mplex-grey)
    (mplex--face 'org-block-end-line :inherit 'org-block-begin-line)
-   (mplex--face 'org-ellipsis :inherit 'font-lock-comment-face)))
+   (mplex--face 'org-ellipsis :inherit 'font-lock-comment-face)
+   (mplex--face 'org-code :foreground mplex-lblue)))
 
 (when load-file-name
   (add-to-list 'custom-theme-load-path

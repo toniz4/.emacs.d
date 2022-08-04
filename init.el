@@ -65,7 +65,7 @@
 ;; But don't resize pixelwise
 (setq window-resize-pixelwise nil)
 
-(defun my/set-font-faces ()
+(defun my-set-font-faces ()
   (let* ((main-font "GoMono Nerd Font Mono")
          (fallback "monospace")
          (font (if (x-list-fonts main-font) main-font fallback)))
@@ -75,8 +75,8 @@
 (if (daemonp)
     (add-hook 'after-make-frame-functions
               (lambda (frame)
-                (with-selected-frame frame (my/set-font-faces))))
-  (my/set-font-faces))
+                (with-selected-frame frame (my-set-font-faces))))
+  (my-set-font-faces))
 
 (add-hook 'prog-mode-hook
           (lambda ()
@@ -96,16 +96,24 @@
           (lambda ()
             (setq-local tab-width 4)))
 
+(add-hook 'sh-mode-hook
+          (lambda ()
+            (setq-local tab-width 4)))
+
+(add-hook 'doc-view-mode-hook
+          (lambda ()
+            (display-line-numbers-mode 0)))
+
 ;; Switch to the scratch buffer
-(defun my/switch-to-scratch-buffer ()
+(defun my-switch-to-scratch-buffer ()
   (interactive)
   (switch-to-buffer "*scratch*"))
 
-(defun my/switch-to-dashboard-buffer ()
+(defun my-switch-to-dashboard-buffer ()
   (interactive)
   (switch-to-buffer "*dashboard*"))
 
-(defun 0x0-buffer ()
+(defun upload-buffer-file-to-0x0 ()
   (interactive)
   (if-let ((filename (buffer-file-name))
            (curl (executable-find "curl")))
@@ -114,13 +122,29 @@
        :command `("curl" "-F" ,(concat "file=@" filename) "https://0x0.st")
        :filter (lambda (x y) (kill-new y)))))
 
+(defun my-open-eshell ()
+  (interactive)
+  (dlet ((eshell-buffer-name "*eshell session*"))
+    (cond ((equal (get-buffer eshell-buffer-name) (window-buffer (selected-window))) 
+           (select-window (get-mru-window t t t))) ;; Focused on eshell buffer
+
+          ((get-buffer-window eshell-buffer-name)
+           (switch-to-buffer-other-window eshell-buffer-name)) ;; Visible in frame
+
+          (t
+           (let ((buf (eshell))) ;; Buffer does not exist
+             (display-buffer buf '(display-buffer-below-selected . ((window-height . 10))))
+             (switch-to-buffer (other-buffer buf))
+             (switch-to-buffer-other-window buf))))))
+;; (my-open-eshell)
+
 (setq bookmark-save-flag 1
       bookmark-set-fringe-mark nil)
 
-(defun my/bookmark-make-record ()
+(defun my-bookmark-make-record ()
   `((filename . ,(buffer-file-name))))
 
-(setq bookmark-make-record-function #'my/bookmark-make-record)
+(setq bookmark-make-record-function #'my-bookmark-make-record)
 
 (save-place-mode)
 
@@ -147,7 +171,7 @@
 (setq straight-use-package-by-default t)
 (require 'org-tempo)
 
-(defun my/set-evil-keybinds ()
+(defun my-set-evil-keybinds ()
   (evil-set-leader 'normal (kbd "SPC"))
   (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
   (evil-define-key 'normal 'global (kbd "<leader>ss") 'sp-forward-slurp-sexp)
@@ -202,26 +226,29 @@
    :states '(normal motion visual)
    :keymaps 'override
    :prefix "SPC"
-   ;; Applications
-   "a" '(nil :which-key "applications")
-   "ag" '(magit-status :which-key "magit")
-   "ad" '(my/switch-to-dashboard-buffer :which-key "dashboard")
 
    "SPC" '(execute-extended-command :which-key "M-x")
    "q" '(save-buffers-kill-emacs :which-key "quit emacs")
+   "'" '(my-open-eshell :which-key "eshell")
+
+   ;; Applications
+   "a" '(nil :which-key "applications")
+   "ag" '(magit-status :which-key "magit")
+   "ad" '(my-switch-to-dashboard-buffer :which-key "dashboard")
+
    ;; Buffes 
    "b" '(nil :which-key "buffer")
    "ba" '(bookmark-set :which-key "set bookmark")
    "bb" '(consult-buffer :which-key "switch buffers")
    "bd" '(evil-delete-buffer :which-key "delete buffer")
    "bk" '(kill-buffer :which-key "kill other buffers")
-   "bs" '(my/switch-to-scratch-buffer :which-key "scratch buffer")
+   "bs" '(my-switch-to-scratch-buffer :which-key "scratch buffer")
    "bi" '(clone-indirect-buffer  :which-key "indirect buffer")
    "br" '(revert-buffer :which-key "revert buffer")
 
    ;; Files
    "f" '(nil :which-key "files")
-   "fb" '(counsel-bookmark :which-key "bookmarks")
+   "fb" '(consult-bookmark :which-key "bookmarks")
    "ff" '(find-file :which-key "find file")
    ;; "fn" '(new-file :which-key "new file")
    ;; "fr" '(counsel-recentf :which-key "recent files")
@@ -269,23 +296,55 @@
 (use-package magit
   :commands (magit-status))
 
-(use-package haskell-mode
+(use-package eldoc
+  :custom
+  (eldoc-echo-area-use-multiline-p 2)
+  (eldoc-echo-area-display-truncation-message nil))
+
+;; (use-package flymake-diagnostic-at-point
+;;   :custom
+;;   (flymake-diagnostic-at-point-error-prefix "→ ")
+;;   :hook
+;;   ((flymake-mode . flymake-diagnostic-at-point-mode)))
+
+(use-package sideline
+  :custom
+  (sideline-backends-right '(sideline-flymake))
+  (sideline-backends-right-skip-current-line nil)
+  (sideline-order-right 'down)
+  (sideline-format-right "%s  "))
+
+
+(use-package sideline-flymake
+  :straight
+  (sideline-flymake :type git :host github :repo "emacs-sideline/sideline-flymake")
   :init
-  (defun haskell-evil-open-above ()
-    (interactive)
-    (evil-digit-argument-or-evil-beginning-of-line)
-    (haskell-indentation-newline-and-indent)
-    (evil-previous-line)
-    (haskell-indentation-indent-line)
-    (evil-append-line nil))
+  (defun my-sideline-flymake-show-errors (callback &rest _)
+    "Execute CALLBACK to display with sideline."
+    (when flymake-mode
+      (when-let ((errors (sideline-flymake--get-errors)))
+        (dolist (err errors)
+          (let* ((text (flymake-diagnostic-text err))
+                 (type (flymake-diagnostic-type err))
+                 (face (cl-case type
+                         (:error 'error)
+                         ('eglot-error 'error)
+                         (:warning 'warning)
+                         ('eglot-warning 'warning)
+                         (t 'success))))
+            (add-face-text-property 0 (length text) face nil text)
+            (funcall callback (list text)))))))
 
-  (defun haskell-evil-open-below ()
-    (interactive)
-    (evil-append-line nil)
-    (haskell-indentation-newline-and-indent))
+  (defun my-sideline-flymake-get-errors ()
+    "Return flymake errors."
+    ;; Don't need to take care of the region, since sideline cannot display with
+    ;; region is active.
+    (flymake-diagnostics (line-beginning-position) (line-end-position)))
 
-  (evil-define-key 'normal haskell-mode-map "o" 'haskell-evil-open-below
-    "O" 'haskell-evil-open-above))
+  (advice-add #'sideline-flymake--show-errors :override #'my-sideline-flymake-show-errors)
+  (advice-add #'sideline-flymake--get-errors :override #'my-sideline-flymake-get-errors)
+  :custom
+  (sideline-order-right 'up))
 
 (use-package fish-mode)
 
@@ -302,25 +361,43 @@
 
 (use-package cider
   :init
-  (defun my/cider-complete-at-point ()
-    "Complete the symbol at point."
-    (when-let* ((bounds (bounds-of-thing-at-point 'symbol)))
-      (when (and (cider-connected-p)
-                 (not (or (cider-in-string-p) (cider-in-comment-p))))
-        (let ((table (cider-complete "")))
-          (message "%s" table)
-          `(,(line-beginning-position) ,(point)
-            ,(cape--table-with-properties table :sort nil :category 'cider))))))
 
-  (advice-add #'cider-complete-at-point :override #'my/cider-complete-at-point)
-
-  (add-to-list 'completion-category-defaults '(cider (styles orderless)))
+  (add-to-list 'completion-category-defaults '(cider (styles basic)))
 
   (setq cider-show-error-buffer nil))
 
 (use-package python-mode)
 
 (use-package scad-mode)
+
+(defun my/org-mode-setup ()
+  (display-line-numbers-mode 0)
+
+  (org-indent-mode)
+  ;; (variable-pitch-mode 1)
+  (auto-fill-mode 0)
+  (visual-line-mode 1)
+
+  ;; Org tempo
+  (require 'org-tempo)
+
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python")))
+
+(use-package org
+  :hook
+  (org-mode . my/org-mode-setup)
+  :config
+  (setq org-ellipsis " ▼"
+        org-hide-emphasis-markers t))
+
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode))
+
+(use-package org-present
+  :commands (org-present))
 
 (use-package orderless
   :config
@@ -351,16 +428,20 @@
   (orderless-component-separator #'orderless-escapable-split-on-space))
 
 (use-package corfu
-  ;; Optional customizations
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
   (corfu-auto-delay 0)
-  (corfu-auto-prefix 0)
+  (corfu-auto-prefix 3)
   (corfu-separator ?\s)             ;; Orderless field separator
   (corfu-quit-at-boundary 'separator)      ;; Never quit at completion boundary
   (corfu-quit-no-match nil)           ;; Never quit, even if there is no match
   (corfu-preselect-first nil)       ;; Disable candidate preselection
+  :init
+  (defun corfu-enable-in-minibuffer ()
+    "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+    (when (where-is-internal #'completion-at-point (list (current-local-map)))
+      (corfu-mode 1)))
   :bind
   (:map corfu-map
         ("C-s" . corfu-quit)
@@ -370,7 +451,16 @@
         ([backtab] . corfu-previous))
   :hook ((prog-mode . corfu-mode)
          (shell-mode . corfu-mode)
+         (minibuffer-setup . corfu-enable-in-minibuffer)
          (eshell-mode . corfu-mode)))
+
+(use-package corfu-doc
+  :hook
+  (corfu-mode . corfu-doc-mode)
+  :bind
+  (:map corfu-map
+        ("M-p" . corfu-doc-scroll-down)
+        ("M-n" . corfu-doc-scroll-up)))
 
 (use-package cape
   ;; Bind dedicated completion commands
@@ -381,7 +471,8 @@
 
 (use-package yasnippet)
 
-(use-package flycheck)
+(use-package flycheck
+  :commands flycheck-mode)
 
 (use-package lsp-mode
   :custom
@@ -415,51 +506,12 @@
   (setq doom-modeline-height 0)
   :hook (after-init . doom-modeline-mode))
 
-(defun my/org-mode-setup ()
-  (display-line-numbers-mode 0)
-
-  (org-indent-mode)
-  ;; (variable-pitch-mode 1)
-  (auto-fill-mode 0)
-  (visual-line-mode 1)
-
-  ;; Org tempo
-  (require 'org-tempo)
-
-  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-  (add-to-list 'org-structure-template-alist '("py" . "src python")))
-
-(use-package org
-  :hook
-  (org-mode . my/org-mode-setup)
-  :config
-  (setq org-ellipsis " ▼"
-        org-hide-emphasis-markers t))
-
-(use-package org-bullets
-  :after org
-  :hook (org-mode . org-bullets-mode))
-
-(use-package org-present
-  :commands (org-present))
-
-(use-package rainbow-mode)
+(use-package rainbow-mode
+  :commands rainbow-mode)
 
 (use-package dashboard
   :config
   (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-  (setq dashboard-startup-banner 'logo)
-  (setq dashboard-center-content t)
-
-  (dashboard-setup-startup-hook))
-
-(use-package visual-fill-column
-  :commands
-  (visual-fill-column-mode)
-  :init
-  (setq visual-fill-column-center-text t
-        visual-fill-column-width 110))
-
-(use-package 2048-game
-  :commands (2048-game))
+  :custom
+  (dashboard-startup-banner 'logo)
+  (dashboard-center-content t))
