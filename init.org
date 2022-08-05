@@ -291,7 +291,6 @@ Only enable the electrip pair mode in the programming mode
                (display-buffer buf '(display-buffer-below-selected . ((window-height . 10))))
                (switch-to-buffer (other-buffer buf))
                (switch-to-buffer-other-window buf))))))
-  ;; (my-open-eshell)
 #+end_src
 
 ** Bookmarks 
@@ -343,6 +342,15 @@ Bootstraps straight.el
 #+end_src
 
 ** Text Editing
+*** ParEdit
+
+#+begin_src emacs-lisp
+  ;; (use-package paredit
+  ;;   :commands paredit-mode
+  ;;   :hook
+  ;;   (electric-pair-mode . paredit-mode))
+#+end_src
+
 *** Evil mode
 
 Make using emacs a good experience
@@ -410,12 +418,12 @@ Make using emacs a good experience
 
      "SPC" '(execute-extended-command :which-key "M-x")
      "q" '(save-buffers-kill-emacs :which-key "quit emacs")
-     "'" '(my-open-eshell :which-key "eshell")
 
      ;; Applications
      "a" '(nil :which-key "applications")
      "ag" '(magit-status :which-key "magit")
      "ad" '(my-switch-to-dashboard-buffer :which-key "dashboard")
+     "as" '(my-open-eshell :which-key "eshell")
 
      ;; Buffes 
      "b" '(nil :which-key "buffer")
@@ -470,7 +478,7 @@ Better menu for M-x, find-file, etc..
   (use-package consult)
 #+end_src
 
-*** Consult LSP
+*** Consult
 
 #+begin_src emacs-lisp
   (use-package consult-lsp)
@@ -629,7 +637,9 @@ Use direnv when changind directories in emacs
 *** Python
 
 #+begin_src emacs-lisp
-  (use-package python-mode)
+  (use-package python-mode
+    :custom
+    (python-shell-interpreter (executable-find "python")))
 #+end_src
 
 *** Scad
@@ -642,7 +652,7 @@ Use direnv when changind directories in emacs
 *** Org Package
 
 #+begin_src emacs-lisp
-  (defun my/org-mode-setup ()
+  (defun my-org-mode-setup ()
     (display-line-numbers-mode 0)
 
     (org-indent-mode)
@@ -659,7 +669,7 @@ Use direnv when changind directories in emacs
 
   (use-package org
     :hook
-    (org-mode . my/org-mode-setup)
+    (org-mode . my-org-mode-setup)
     :config
     (setq org-ellipsis " ▼"
           org-hide-emphasis-markers t))
@@ -790,26 +800,48 @@ Use direnv when changind directories in emacs
     (lsp-keymap-prefix "C-c l")
     (lsp-headerline-breadcrumb-enable nil)
     :init
-    (defun my/lsp-mode-setup-completion ()
+    (defun my-lsp-mode-setup-completion ()
       (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
             '(orderless)))
 
-    (defun my/update-completions-list ()
+    (defun my-update-completions-list ()
       (progn
         (fset 'non-greedy-lsp
               (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
         (setq completion-at-point-functions
               '(non-greedy-lsp cape-file))))
 
+    (defun my-lsp-python-setup ()
+      (add-hook 'lsp-managed-mode-hook
+                (lambda ()
+                  (flycheck-add-next-checker 'lsp 'python-pyright))))
+
     :hook ((clojure-mode . lsp-deferred)
            (go-mode . lsp-deferred)
-           (lsp-completion-mode . my/lsp-mode-setup-completion)
-           (lsp-completion-mode . my/update-completions-list)
+           (python-mode . lsp-deferred)
+           (python-mode . my-lsp-python-setup)
+           (lsp-completion-mode . my-lsp-mode-setup-completion)
+           (lsp-completion-mode . my-update-completions-list)
            (lsp-mode . yas-minor-mode)
            (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp lsp-deferred)
 
   (use-package lsp-ui :commands lsp-ui-mode)
+
+  (use-package lsp-jedi
+    :config
+    (with-eval-after-load "lsp-mode"
+      (add-to-list 'lsp-disabled-clients 'pyls)
+      (add-to-list 'lsp-enabled-clients 'jedi)))
+
+  ;; (use-package lsp-pyright
+  ;;   :custom
+  ;;   (lsp-pyright-auto-import-completions nil)
+  ;;   :config
+  ;;   (add-to-list 'lsp-enabled-clients 'pyright)
+  ;;   :hook (python-mode . (lambda ()
+  ;;                          (require 'lsp-pyright)
+  ;;                          (lsp-deferred))))
 #+end_src
 
 ** UI

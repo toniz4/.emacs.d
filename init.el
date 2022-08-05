@@ -136,7 +136,6 @@
              (display-buffer buf '(display-buffer-below-selected . ((window-height . 10))))
              (switch-to-buffer (other-buffer buf))
              (switch-to-buffer-other-window buf))))))
-;; (my-open-eshell)
 
 (setq bookmark-save-flag 1
       bookmark-set-fringe-mark nil)
@@ -170,6 +169,11 @@
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
 (require 'org-tempo)
+
+;; (use-package paredit
+;;   :commands paredit-mode
+;;   :hook
+;;   (electric-pair-mode . paredit-mode))
 
 (defun my-set-evil-keybinds ()
   (evil-set-leader 'normal (kbd "SPC"))
@@ -229,12 +233,12 @@
 
    "SPC" '(execute-extended-command :which-key "M-x")
    "q" '(save-buffers-kill-emacs :which-key "quit emacs")
-   "'" '(my-open-eshell :which-key "eshell")
 
    ;; Applications
    "a" '(nil :which-key "applications")
    "ag" '(magit-status :which-key "magit")
    "ad" '(my-switch-to-dashboard-buffer :which-key "dashboard")
+   "as" '(my-open-eshell :which-key "eshell")
 
    ;; Buffes 
    "b" '(nil :which-key "buffer")
@@ -366,7 +370,9 @@
 
   (setq cider-show-error-buffer nil))
 
-(use-package python-mode)
+(use-package python-mode
+  :custom
+  (python-shell-interpreter (executable-find "python")))
 
 (use-package scad-mode)
 
@@ -491,8 +497,15 @@
       (setq completion-at-point-functions
             '(non-greedy-lsp cape-file))))
 
+  (defun my-lsp-python-setup ()
+    (add-hook 'lsp-managed-mode-hook
+              (lambda ()
+                (flycheck-add-next-checker 'lsp 'python-pyright))))
+
   :hook ((clojure-mode . lsp-deferred)
          (go-mode . lsp-deferred)
+         (python-mode . lsp-deferred)
+         (python-mode . my-lsp-python-setup)
          (lsp-completion-mode . my/lsp-mode-setup-completion)
          (lsp-completion-mode . my/update-completions-list)
          (lsp-mode . yas-minor-mode)
@@ -500,6 +513,21 @@
   :commands lsp lsp-deferred)
 
 (use-package lsp-ui :commands lsp-ui-mode)
+
+(use-package lsp-jedi
+  :config
+  (with-eval-after-load "lsp-mode"
+    (add-to-list 'lsp-disabled-clients 'pyls)
+    (add-to-list 'lsp-enabled-clients 'jedi)))
+
+;; (use-package lsp-pyright
+;;   :custom
+;;   (lsp-pyright-auto-import-completions nil)
+;;   :config
+;;   (add-to-list 'lsp-enabled-clients 'pyright)
+;;   :hook (python-mode . (lambda ()
+;;                          (require 'lsp-pyright)
+;;                          (lsp-deferred))))
 
 (use-package doom-modeline
   :init
