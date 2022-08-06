@@ -338,32 +338,26 @@ Bootstraps straight.el
   ; Straight config
   (straight-use-package 'use-package)
   (setq straight-use-package-by-default t)
-  (require 'org-tempo)
 #+end_src
 
 ** Text Editing
 *** ParEdit
 
 #+begin_src emacs-lisp
-  ;; (use-package paredit
-  ;;   :commands paredit-mode
-  ;;   :hook
-  ;;   (electric-pair-mode . paredit-mode))
+  (use-package evil-cleverparens
+    :hook
+    (clojure-mode . evil-cleverparens-mode)
+    (emacs-lisp-mode . evil-cleverparens-mode)
+    (scheme-mode . evil-cleverparens-mode))
 #+end_src
 
 *** Evil mode
 
 Make using emacs a good experience
 
-#+begin_src emacs-lisp
-  (defun my-set-evil-keybinds ()
-    (evil-set-leader 'normal (kbd "SPC"))
-    (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
-    (evil-define-key 'normal 'global (kbd "<leader>ss") 'sp-forward-slurp-sexp)
-    (evil-define-key 'normal 'global (kbd "<leader>sb") 'sp-forword-barf-sexp)
-    (evil-define-key 'motion help-mode-map "q" 'kill-this-buffer)
-    (evil-define-key 'normal 'global (kbd "<leader>lb") 'switch-to-buffer))
+**** Core
 
+#+begin_src emacs-lisp
   (use-package evil
     :demand t
     :bind (("<escape>" . keyboard-escape-quit))
@@ -388,20 +382,32 @@ Make using emacs a good experience
     (evil-want-keybinding nil)
     :config
     (evil-mode 1))
+#+end_src
 
+**** Evil Collection
+
+#+begin_src emacs-lisp
   (use-package evil-collection
     :demand t
     :after evil
     :config
     (evil-collection-init))
+#+end_src
 
+**** Evil Org
+
+#+begin_src emacs-lisp
   (use-package evil-org
     :after org
-    :hook (org-mode . (lambda () evil-org-mode))
+    :hook (org-mode . evil-org-mode)
     :config
     (require 'evil-org-agenda)
     (evil-org-agenda-set-keys))
+#+end_src
 
+**** Evil Commentary 
+
+#+begin_src emacs-lisp
   (use-package evil-commentary
     :init (evil-commentary-mode))
 #+end_src
@@ -524,6 +530,12 @@ Use direnv when changind directories in emacs
 
 #+begin_src emacs-lisp
   (use-package magit
+    :init
+    (defun transient-bind-esc-to-quit ()
+      (define-key transient-base-map   (kbd "<escape>") #'transient-quit-one)
+      (define-key transient-sticky-map (kbd "<escape>") #'transient-quit-seq)
+      (setq transient-substitute-key-function
+            #'transient-rebind-quit-commands))
     :commands (magit-status))
 #+end_src
 
@@ -771,7 +783,6 @@ Use direnv when changind directories in emacs
 
 #+begin_src emacs-lisp
   (use-package cape
-    ;; Bind dedicated completion commands
     :init
     (add-to-list 'completion-at-point-functions #'cape-file))
 #+end_src
@@ -781,7 +792,9 @@ Use direnv when changind directories in emacs
 #+begin_src emacs-lisp
   (use-package yasnippet-snippets)
 
-  (use-package yasnippet)
+  (use-package yasnippet
+    :hook
+    (prog-mode . yas-minor-mode))
  #+end_src
 
 ** LSP
@@ -828,11 +841,10 @@ Use direnv when changind directories in emacs
 
   (use-package lsp-ui :commands lsp-ui-mode)
 
-  (use-package lsp-jedi
-    :config
-    (with-eval-after-load "lsp-mode"
-      (add-to-list 'lsp-disabled-clients 'pyls)
-      (add-to-list 'lsp-enabled-clients 'jedi)))
+  ;; (use-package lsp-jedi
+  ;;   :config
+  ;;   (with-eval-after-load "lsp-mode"
+  ;;     (add-to-list 'lsp-enabled-clients 'jedi)))
 
   ;; (use-package lsp-pyright
   ;;   :custom

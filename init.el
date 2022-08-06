@@ -168,20 +168,12 @@
 ; Straight config
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
-(require 'org-tempo)
 
-;; (use-package paredit
-;;   :commands paredit-mode
-;;   :hook
-;;   (electric-pair-mode . paredit-mode))
-
-(defun my-set-evil-keybinds ()
-  (evil-set-leader 'normal (kbd "SPC"))
-  (evil-define-key 'normal 'global (kbd "<leader>lf") 'find-file)
-  (evil-define-key 'normal 'global (kbd "<leader>ss") 'sp-forward-slurp-sexp)
-  (evil-define-key 'normal 'global (kbd "<leader>sb") 'sp-forword-barf-sexp)
-  (evil-define-key 'motion help-mode-map "q" 'kill-this-buffer)
-  (evil-define-key 'normal 'global (kbd "<leader>lb") 'switch-to-buffer))
+(use-package evil-cleverparens
+  :hook
+  (clojure-mode . evil-cleverparens-mode)
+  (emacs-lisp-mode . evil-cleverparens-mode)
+  (scheme-mode . evil-cleverparens-mode))
 
 (use-package evil
   :demand t
@@ -216,7 +208,7 @@
 
 (use-package evil-org
   :after org
-  :hook (org-mode . (lambda () evil-org-mode))
+  :hook (org-mode . evil-org-mode)
   :config
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
@@ -376,7 +368,7 @@
 
 (use-package scad-mode)
 
-(defun my/org-mode-setup ()
+(defun my-org-mode-setup ()
   (display-line-numbers-mode 0)
 
   (org-indent-mode)
@@ -393,7 +385,7 @@
 
 (use-package org
   :hook
-  (org-mode . my/org-mode-setup)
+  (org-mode . my-org-mode-setup)
   :config
   (setq org-ellipsis " ▼"
         org-hide-emphasis-markers t))
@@ -469,13 +461,14 @@
         ("M-n" . corfu-doc-scroll-up)))
 
 (use-package cape
-  ;; Bind dedicated completion commands
   :init
   (add-to-list 'completion-at-point-functions #'cape-file))
 
 (use-package yasnippet-snippets)
 
-(use-package yasnippet)
+(use-package yasnippet
+  :hook
+  (prog-mode . yas-minor-mode))
 
 (use-package flycheck
   :commands flycheck-mode)
@@ -486,16 +479,16 @@
   (lsp-keymap-prefix "C-c l")
   (lsp-headerline-breadcrumb-enable nil)
   :init
-  (defun my/lsp-mode-setup-completion ()
+  (defun my-lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(orderless)))
 
-  (defun my/update-completions-list ()
+  (defun my-update-completions-list ()
     (progn
       (fset 'non-greedy-lsp
             (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
       (setq completion-at-point-functions
-            '(non-greedy-lsp cape-file))))
+            '(non-greedy-lsp cape-file cape-yasnippet))))
 
   (defun my-lsp-python-setup ()
     (add-hook 'lsp-managed-mode-hook
@@ -506,19 +499,18 @@
          (go-mode . lsp-deferred)
          (python-mode . lsp-deferred)
          (python-mode . my-lsp-python-setup)
-         (lsp-completion-mode . my/lsp-mode-setup-completion)
-         (lsp-completion-mode . my/update-completions-list)
+         (lsp-completion-mode . my-lsp-mode-setup-completion)
+         (lsp-completion-mode . my-update-completions-list)
          (lsp-mode . yas-minor-mode)
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp lsp-deferred)
 
 (use-package lsp-ui :commands lsp-ui-mode)
 
-(use-package lsp-jedi
-  :config
-  (with-eval-after-load "lsp-mode"
-    (add-to-list 'lsp-disabled-clients 'pyls)
-    (add-to-list 'lsp-enabled-clients 'jedi)))
+;; (use-package lsp-jedi
+;;   :config
+;;   (with-eval-after-load "lsp-mode"
+;;     (add-to-list 'lsp-enabled-clients 'jedi)))
 
 ;; (use-package lsp-pyright
 ;;   :custom
