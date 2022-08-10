@@ -51,7 +51,7 @@
       initial-scratch-message nil
       server-client-instructions nil)
 
-(load-theme 'mplex t)
+;; (load-theme 'mplex t)
 
 ; Line number mode
 (setq display-line-numbers-type 'relative)
@@ -64,6 +64,11 @@
 
 ;; But don't resize pixelwise
 (setq window-resize-pixelwise nil)
+
+(setq window-divider-default-right-width 3
+        window-divider-default-left-width 3)
+
+  (window-divider-mode)
 
 (defun my-set-font-faces ()
   (let* ((main-font "GoMono Nerd Font Mono")
@@ -147,6 +152,11 @@
 
 (save-place-mode)
 
+(add-to-list 'exec-path
+             (concat (getenv "HOME") "/.local/bin"))
+
+(setq eshell-banner-message "")
+
 ; Straight bootstrap
 (setq straight-check-for-modifications nil)
 
@@ -174,6 +184,59 @@
   (clojure-mode . evil-cleverparens-mode)
   (emacs-lisp-mode . evil-cleverparens-mode)
   (scheme-mode . evil-cleverparens-mode))
+
+(use-package general
+  :init
+  (general-define-key
+   :states '(normal motion visual)
+   :keymaps 'override
+   :prefix "SPC"
+
+   "SPC" '(execute-extended-command :which-key "M-x")
+   "q" '(save-buffers-kill-emacs :which-key "quit emacs")
+
+   ;; Applications
+   "a" '(nil :which-key "applications")
+   "ag" '(magit-status :which-key "magit")
+   "ad" '(my-switch-to-dashboard-buffer :which-key "dashboard")
+   "as" '(my-open-eshell :which-key "eshell")
+
+   ;; Buffes 
+   "b" '(nil :which-key "buffer")
+   "ba" '(bookmark-set :which-key "set bookmark")
+   "bb" '(consult-buffer :which-key "switch buffers")
+   "bd" '(evil-delete-buffer :which-key "delete buffer")
+   "bk" '(kill-buffer :which-key "kill other buffers")
+   "bs" '(my-switch-to-scratch-buffer :which-key "scratch buffer")
+   "bi" '(clone-indirect-buffer  :which-key "indirect buffer")
+   "br" '(revert-buffer :which-key "revert buffer")
+
+   ;; Files
+   "f" '(nil :which-key "files")
+   "fb" '(consult-bookmark :which-key "bookmarks")
+   "ff" '(find-file :which-key "find file")
+   "fr" '(consult-recent-file :which-key "recent files")
+   "fR" '(rename-file :which-key "rename file")
+   "fs" '(save-buffer :which-key "save buffer")
+   "fS" '(evil-write-all :which-key "save all buffers")
+   "fg" '(consult-ripgrep :which-key "ripgrep")
+   "fG" '(consult-grep :which-key "grep")
+
+   ;; Window
+   "w" '(nil :which-key "window")
+   "ww" '(evil-window-next :which-key "next")
+   "wv" '(evil-window-vsplit :which-key "vsplit")
+   "wn" '(evil-window-split :which-key "split")
+   "wq" '(evil-quit :which-key "close window")
+   "w1" '(delete-other-windows :which-key "close other windows")
+
+   ;; Help
+   "h" '(nil :which-key "help")
+   "hc" '(describe-char :which-key "describe char")
+   "hC" '(describe-command :which-key "describe command")
+   "hf" '(describe-function :which-key "describe function")
+   "hF" '(describe-face :which-key "describe face")
+   "hv" '(describe-variable :which-key "describe variable")))
 
 (use-package evil
   :demand t
@@ -216,60 +279,18 @@
 (use-package evil-commentary
   :init (evil-commentary-mode))
 
-(use-package general
-  :init
-  (general-define-key
-   :states '(normal motion visual)
-   :keymaps 'override
-   :prefix "SPC"
-
-   "SPC" '(execute-extended-command :which-key "M-x")
-   "q" '(save-buffers-kill-emacs :which-key "quit emacs")
-
-   ;; Applications
-   "a" '(nil :which-key "applications")
-   "ag" '(magit-status :which-key "magit")
-   "ad" '(my-switch-to-dashboard-buffer :which-key "dashboard")
-   "as" '(my-open-eshell :which-key "eshell")
-
-   ;; Buffes 
-   "b" '(nil :which-key "buffer")
-   "ba" '(bookmark-set :which-key "set bookmark")
-   "bb" '(consult-buffer :which-key "switch buffers")
-   "bd" '(evil-delete-buffer :which-key "delete buffer")
-   "bk" '(kill-buffer :which-key "kill other buffers")
-   "bs" '(my-switch-to-scratch-buffer :which-key "scratch buffer")
-   "bi" '(clone-indirect-buffer  :which-key "indirect buffer")
-   "br" '(revert-buffer :which-key "revert buffer")
-
-   ;; Files
-   "f" '(nil :which-key "files")
-   "fb" '(consult-bookmark :which-key "bookmarks")
-   "ff" '(find-file :which-key "find file")
-   ;; "fn" '(new-file :which-key "new file")
-   ;; "fr" '(counsel-recentf :which-key "recent files")
-   "fR" '(rename-file :which-key "rename file")
-   "fs" '(save-buffer :which-key "save buffer")
-   "fS" '(evil-write-all :which-key "save all buffers")
-   "fg" '(consult-ripgrep :which-key "ripgrep")
-   "fG" '(consult-grep :which-key "grep")
-
-   ;; Help
-   "h" '(nil :which-key "help")
-   "hc" '(describe-char :which-key "describe char")
-   "hC" '(describe-command :which-key "describe command")
-   "hf" '(describe-function :which-key "describe function")
-   "hF" '(describe-face :which-key "describe face")
-   "hv" '(describe-variable :which-key "describe variable")))
-
 (use-package vertico
+  :custom
+  (vertico-scroll-margin 2)
   :init
-  (use-package savehist
-    :init
-    (savehist-mode))
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+  (vertico-mode))
 
-  (vertico-mode)
-  (setq vertico-scroll-margin 2))
+(use-package savehist
+  :init
+  (savehist-mode))
 
 (use-package consult)
 
@@ -290,6 +311,12 @@
   (direnv-mode))
 
 (use-package magit
+  :init
+  (defun transient-bind-esc-to-quit ()
+    (define-key transient-base-map   (kbd "<escape>") #'transient-quit-one)
+    (define-key transient-sticky-map (kbd "<escape>") #'transient-quit-seq)
+    (setq transient-substitute-key-function
+          #'transient-rebind-quit-commands))
   :commands (magit-status))
 
 (use-package eldoc
@@ -297,50 +324,7 @@
   (eldoc-echo-area-use-multiline-p 2)
   (eldoc-echo-area-display-truncation-message nil))
 
-;; (use-package flymake-diagnostic-at-point
-;;   :custom
-;;   (flymake-diagnostic-at-point-error-prefix "→ ")
-;;   :hook
-;;   ((flymake-mode . flymake-diagnostic-at-point-mode)))
-
-(use-package sideline
-  :custom
-  (sideline-backends-right '(sideline-flymake))
-  (sideline-backends-right-skip-current-line nil)
-  (sideline-order-right 'down)
-  (sideline-format-right "%s  "))
-
-
-(use-package sideline-flymake
-  :straight
-  (sideline-flymake :type git :host github :repo "emacs-sideline/sideline-flymake")
-  :init
-  (defun my-sideline-flymake-show-errors (callback &rest _)
-    "Execute CALLBACK to display with sideline."
-    (when flymake-mode
-      (when-let ((errors (sideline-flymake--get-errors)))
-        (dolist (err errors)
-          (let* ((text (flymake-diagnostic-text err))
-                 (type (flymake-diagnostic-type err))
-                 (face (cl-case type
-                         (:error 'error)
-                         ('eglot-error 'error)
-                         (:warning 'warning)
-                         ('eglot-warning 'warning)
-                         (t 'success))))
-            (add-face-text-property 0 (length text) face nil text)
-            (funcall callback (list text)))))))
-
-  (defun my-sideline-flymake-get-errors ()
-    "Return flymake errors."
-    ;; Don't need to take care of the region, since sideline cannot display with
-    ;; region is active.
-    (flymake-diagnostics (line-beginning-position) (line-end-position)))
-
-  (advice-add #'sideline-flymake--show-errors :override #'my-sideline-flymake-show-errors)
-  (advice-add #'sideline-flymake--get-errors :override #'my-sideline-flymake-get-errors)
-  :custom
-  (sideline-order-right 'up))
+(use-package yaml-mode)
 
 (use-package fish-mode)
 
@@ -363,6 +347,7 @@
   (setq cider-show-error-buffer nil))
 
 (use-package python-mode
+  :defer t
   :custom
   (python-shell-interpreter (executable-find "python")))
 
@@ -384,6 +369,10 @@
   (add-to-list 'org-structure-template-alist '("py" . "src python")))
 
 (use-package org
+  :init
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)))
   :hook
   (org-mode . my-org-mode-setup)
   :config
@@ -393,6 +382,9 @@
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode))
+
+
+(setq org-bullets-face-name "BlexMono Nerd Font")
 
 (use-package org-present
   :commands (org-present))
@@ -464,9 +456,12 @@
   :init
   (add-to-list 'completion-at-point-functions #'cape-file))
 
-(use-package yasnippet-snippets)
+(use-package yasnippet-snippets
+  :defer t)
 
 (use-package yasnippet
+  :commands
+  (yas-minor-mode)
   :hook
   (prog-mode . yas-minor-mode))
 
@@ -478,6 +473,8 @@
   (lsp-completion-provider :none)
   (lsp-keymap-prefix "C-c l")
   (lsp-headerline-breadcrumb-enable nil)
+  (lsp-modeline-code-action-fallback-icon "?")
+  (lsp-modeline-code-actions-segments '(icon count))
   :init
   (defun my-lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
@@ -488,38 +485,52 @@
       (fset 'non-greedy-lsp
             (cape-capf-properties #'lsp-completion-at-point :exclusive 'no))
       (setq completion-at-point-functions
-            '(non-greedy-lsp cape-file cape-yasnippet))))
+            '(non-greedy-lsp cape-file))))
 
   (defun my-lsp-python-setup ()
-    (add-hook 'lsp-managed-mode-hook
+    (add-hook 'lsp-configure-hook
               (lambda ()
-                (flycheck-add-next-checker 'lsp 'python-pyright))))
+                    (when lsp-auto-configure
+                      (flycheck-add-next-checker 'lsp 'python-pyright)))))
+
+  (use-package lsp-ui :commands lsp-ui-mode)
+
+  (setq lsp-enabled-clients '(pyright jedi clojure-lsp gopls clang))
 
   :hook ((clojure-mode . lsp-deferred)
          (go-mode . lsp-deferred)
          (python-mode . lsp-deferred)
-         (python-mode . my-lsp-python-setup)
+         (python-mode . (lambda ()
+                          (advice-add #'my-lsp-python-setup
+                                      :after #'lsp-configure-buffer)))
          (lsp-completion-mode . my-lsp-mode-setup-completion)
          (lsp-completion-mode . my-update-completions-list)
          (lsp-mode . yas-minor-mode)
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp lsp-deferred)
 
-(use-package lsp-ui :commands lsp-ui-mode)
+(use-package lsp-jedi
+  :defer t)
 
-;; (use-package lsp-jedi
-;;   :config
-;;   (with-eval-after-load "lsp-mode"
-;;     (add-to-list 'lsp-enabled-clients 'jedi)))
+(use-package lsp-pyright
+  :defer t
+  :custom
+  (lsp-pyright-auto-import-completions nil)
+  :init
+  (defun my-python-setup ()
 
-;; (use-package lsp-pyright
-;;   :custom
-;;   (lsp-pyright-auto-import-completions nil)
-;;   :config
-;;   (add-to-list 'lsp-enabled-clients 'pyright)
-;;   :hook (python-mode . (lambda ()
-;;                          (require 'lsp-pyright)
-;;                          (lsp-deferred))))
+    (require 'lsp-pyright)
+    (lsp-deferred))
+  :hook
+  (python-mode . my-python-setup))
+
+(use-package acme-theme
+  :straight
+  (:local-repo "/home/cassio/src/acme-emacs-theme")
+  :custom
+  (acme-theme-black-fg t)
+  :init
+  (load-theme 'acme t))
 
 (use-package doom-modeline
   :init

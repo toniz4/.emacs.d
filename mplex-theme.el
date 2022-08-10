@@ -62,6 +62,10 @@
 
    (mplex--face 'shadow :foreground mplex-grey)
 
+   (mplex--face 'window-divider :foreground mplex-grey)
+   (mplex--face 'window-divider-first-pixel :foreground mplex-grey)
+   (mplex--face 'window-divider-last-pixel :foreground mplex-grey)
+
    ;; Mode-line
    (mplex--face 'mode-line :box mplex-grey :foreground mplex-yellow)
    (mplex--face 'mode-line-inactive :foreground mplex-grey)
